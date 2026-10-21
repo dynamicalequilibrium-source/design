@@ -21,11 +21,8 @@ import { Avatar, Badge, DocIcon } from "./ui";
 import { useSaved } from "./storage";
 import QuestionPanel from "./questions";
 
-function Block({ id, questions, doc, selected, openPanel, children }) {
-  const count = questions.filter(
-      (q) => q.doc === doc.id && q.block === id,
-    ).length,
-    label = sections.find(([key]) => key === id)[1];
+function Block({ id, selected, children }) {
+  const label = sections.find(([key]) => key === id)[1];
   return (
     <section
       id={`block-${id}`}
@@ -34,19 +31,26 @@ function Block({ id, questions, doc, selected, openPanel, children }) {
     >
       <div className="block-heading">
         <h2>{label}</h2>
-        <button
-          id={`ask-${id}`}
-          className={`paragraph-ask ${count ? "has-questions" : ""}`}
-          onClick={(event) => openPanel(id, event)}
-          aria-label={`${label} ${count ? `질문 ${count}개 보기` : "질문하기"}`}
-          aria-expanded={selected === id}
-        >
-          <MessageCircle size={15} />
-          {count ? `질문 ${count}` : "질문하기"}
-        </button>
       </div>
       {children}
     </section>
+  );
+}
+function InlineQa({ id, questions, doc, selected, openPanel }) {
+  const count = questions.filter(
+    (q) => q.doc === doc.id && q.block === id,
+  ).length;
+  const label = sections.find(([key]) => key === id)[1];
+  return (
+    <button
+      id={`ask-${id}`}
+      className="inline-qa"
+      onClick={(event) => openPanel(id, event)}
+      aria-label={`${label} Q&A${count ? ` ${count}개 보기` : " 열기"}`}
+      aria-expanded={selected === id}
+    >
+      Q&A{count > 0 ? ` ${count}` : ""}
+    </button>
   );
 }
 export default function Reader(props) {
@@ -219,7 +223,7 @@ export default function Reader(props) {
             <div className="reader-tip">
               <MessageCircle size={16} />
               <p>
-                읽다가 막히면 문단 옆 <b>‘질문하기’</b>를 눌러보세요.
+                읽다가 막히면 문장 끝의 <b>Q&A</b>를 눌러보세요.
               </p>
               <button
                 className="icon-button"
@@ -243,13 +247,17 @@ export default function Reader(props) {
             </div>
           </details>
           <Block id="overview" {...blockProps}>
-            <p className="anchor-target">{doc.intro}</p>
+            <p className="anchor-target">
+              {doc.intro} <InlineQa id="overview" {...blockProps} />
+            </p>
           </Block>
           <Block id="current" {...blockProps}>
             <div className="inline-stage">
               <span /> {doc.stage}
             </div>
-            <p className="anchor-target">{doc.next}</p>
+            <p className="anchor-target">
+              {doc.next} <InlineQa id="current" {...blockProps} />
+            </p>
             <p className="muted">
               샘플 시점의 상황이에요. 실제 진행 현황은 문서 담당자에게
               확인해주세요.
@@ -270,14 +278,9 @@ export default function Reader(props) {
               <span>02</span>
               <div>
                 <h3>{doc.tasks[1]}</h3>
-                <blockquote className="anchor-target">{doc.quote}</blockquote>
-                <button
-                  className="text-button contextual-question"
-                  onClick={(event) => openPanel("procedure", event)}
-                >
-                  <MessageCircle size={15} /> 이 문장에 질문하기{" "}
-                  <ArrowRight size={14} />
-                </button>
+                <p className="anchor-target">
+                  {doc.quote} <InlineQa id="procedure" {...blockProps} />
+                </p>
                 <p>
                   확인 과정에서 알게 된 예외나 협의 내용은 업무 기록에 함께
                   남깁니다.
@@ -296,10 +299,9 @@ export default function Reader(props) {
             </div>
           </Block>
           <Block id="schedule" {...blockProps}>
-            <div className="schedule-callout anchor-target">
-              <CalendarDays size={19} />
-              <span>{doc.due}</span>
-            </div>
+            <p className="anchor-target">
+              {doc.due} <InlineQa id="schedule" {...blockProps} />
+            </p>
             <div className="reader-checklist">
               {doc.tasks.map((task, i) => (
                 <label key={task}>
@@ -334,14 +336,18 @@ export default function Reader(props) {
               <div>
                 <strong>{doc.owner}</strong>
                 <span>{doc.team} · 문서 담당자</span>
-                <p className="anchor-target">{quoteFor(doc, "people")}</p>
               </div>
             </div>
+            <p className="anchor-target contact-context">
+              {quoteFor(doc, "people")} <InlineQa id="people" {...blockProps} />
+            </p>
           </Block>
           <Block id="caution" {...blockProps}>
-            <div className="warning-box anchor-target">
+            <div className="warning-box">
               <CircleHelp size={20} />
-              <p>{doc.caution}</p>
+              <p className="anchor-target">
+                {doc.caution} <InlineQa id="caution" {...blockProps} />
+              </p>
             </div>
           </Block>
           <Block id="sources" {...blockProps}>
@@ -349,22 +355,24 @@ export default function Reader(props) {
               자료 목록과 근거 확인 방식을 보여주는 가상 예시예요.
             </p>
             {doc.files.map((name, i) => (
-              <button
-                key={name}
-                className={`attachment ${i === 0 ? "anchor-target" : ""}`}
-                onClick={() => setDialog("source")}
-              >
-                <FileText size={22} />
-                <span>
-                  <strong>{name}</strong>
-                  <small>
-                    {i === 0
-                      ? "업무 기준 · 샘플 인용 보기"
-                      : "실제 파일 미연결"}
-                  </small>
-                </span>
-                <ArrowUpRight size={17} />
-              </button>
+              <div className="source-row" key={name}>
+                <button
+                  className={`attachment ${i === 0 ? "anchor-target" : ""}`}
+                  onClick={() => setDialog("source")}
+                >
+                  <FileText size={22} />
+                  <span>
+                    <strong>{name}</strong>
+                    <small>
+                      {i === 0
+                        ? "업무 기준 · 샘플 인용 보기"
+                        : "실제 파일 미연결"}
+                    </small>
+                  </span>
+                  <ArrowUpRight size={17} />
+                </button>
+                {i === 0 && <InlineQa id="sources" {...blockProps} />}
+              </div>
             ))}
           </Block>
           <div className="reader-end">

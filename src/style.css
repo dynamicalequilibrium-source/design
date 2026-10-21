@@ -1725,22 +1725,29 @@ footer > small:last-child {
   letter-spacing: -0.7px;
   line-height: 1.5;
 }
-.paragraph-ask {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 36px;
-  padding: 5px 8px;
+.inline-qa {
+  display: inline-block;
+  vertical-align: baseline;
+  min-height: 24px;
+  margin-inline-start: 5px;
+  padding: 2px 7px;
   white-space: nowrap;
-  border: 1px solid #dfe7d4;
-  border-radius: 5px;
+  border: 1px solid #c5d8b6;
+  border-radius: 4px;
   font-size: 0.6875rem;
-  color: #587944;
-  flex-shrink: 0;
-}
-.paragraph-ask.has-questions {
+  font-weight: 600;
+  line-height: 1.5;
+  color: #3e654c;
   background: #edf3e2;
-  border-color: #dae8c8;
+}
+.inline-qa:hover {
+  background: #e0ebd4;
+  color: #2c4c36;
+}
+.inline-qa[aria-expanded="true"] {
+  background: #3e654c;
+  border-color: #3e654c;
+  color: white;
 }
 .reader-block p {
   font-size: 1.0625rem;
@@ -1752,12 +1759,6 @@ footer > small:last-child {
   font-size: 0.8125rem;
   color: #617955;
   margin-top: 13px;
-}
-.selected-block .anchor-target {
-  background-color: #f0f6e7;
-  outline: 2px solid #b6cca0;
-  outline-offset: 5px;
-  border-radius: 3px;
 }
 .inline-stage {
   display: flex;
@@ -1807,31 +1808,23 @@ footer > small:last-child {
 .procedure p {
   font-size: 1rem;
 }
-.procedure blockquote {
-  margin: 0;
-  background: #f5f7ed;
-  border-left: 3px solid #a5bd89;
-  padding: 16px 18px;
-  font-size: 1rem;
-  line-height: 1.9;
-  color: #3e5d31;
+.procedure .anchor-target + p,
+.contact-context {
+  margin-top: 12px;
 }
-.contextual-question {
-  font-size: 0.6875rem;
-  margin: 5px 0 12px;
-}
-.schedule-callout {
+.source-row {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 0.875rem;
-  background: #f7f9f1;
-  border: 1px solid #e2ead8;
-  border-radius: 7px;
-  padding: 13px;
-  color: #4e7539;
-  line-height: 1.8;
-  margin-bottom: 15px;
+  gap: 8px;
+  margin-top: 11px;
+}
+.source-row > .attachment {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+.source-row > .inline-qa {
+  flex-shrink: 0;
 }
 .reader-checklist label {
   display: flex;
@@ -3762,15 +3755,6 @@ textarea {
   .block-heading {
     gap: 7px;
   }
-  .paragraph-ask {
-    font-size: 0.625rem;
-    gap: 4px;
-    padding: 5px 6px;
-    min-height: 38px;
-  }
-  .paragraph-ask > svg {
-    width: 14px;
-  }
   .procedure {
     gap: 11px;
   }
@@ -3779,10 +3763,6 @@ textarea {
   }
   .procedure p {
     font-size: 1rem;
-  }
-  .procedure blockquote {
-    font-size: 1rem;
-    padding: 14px;
   }
   .procedure > span {
     width: 25px;
@@ -3798,10 +3778,6 @@ textarea {
   }
   .reader-checklist label {
     font-size: 0.9375rem;
-  }
-  .schedule-callout {
-    font-size: 0.8125rem;
-    padding: 12px;
   }
   .attachment {
     gap: 9px;
@@ -4084,8 +4060,7 @@ textarea {
   .reader-actions,
   .toc,
   .back-link,
-  .paragraph-ask,
-  .contextual-question,
+  .inline-qa,
   .reader-tip,
   .mobile-toc,
   .question-panel,
