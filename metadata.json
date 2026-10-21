@@ -1,0 +1,6 @@
+{
+  "name": "업무 바통 (Baton Wiki)",
+  "description": "바통위키 스타일의 인터랙티브 업무 인수인계서와 문장별 바통 Q&A 지식 아카이브",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,926 @@
+import { WikiDocument, KinThread } from '../types/wiki';
+
+export const MOCK_WIKI_DOCUMENTS: WikiDocument[] = [
+  {
+    id: 'doc-subsidy-2026',
+    title: '2026 청년 창업 활성화 보조사업 관리 및 예산 정산 인수인계서',
+    categories: ['업무 인수인계', '공공 보조사업', '2026년도', '기획재정팀', 'e나라도움'],
+    lastModified: '2026-10-18 21:45:12',
+    viewCount: 1420,
+    version: 'v4.2 (게시본)',
+    summary: '본 문서는 2026년도 청년 창업지원 국고보조사업(총예산 45억 원)의 전주기 관리, e나라도움 시스템 집행, 증빙 검증 및 연말 결산 반납 절차를 정리한 공식 인수인계서입니다.',
+    infoBox: {
+      title: '청년 창업 활성화 보조사업',
+      subtitle: '2026년도 직무 인수인계 지침서',
+      emblemText: 'BATON-WIKI',
+      items: [
+        { label: '주관 부서', value: '일자리경제본부 청년창업지원과', isLink: true },
+        { label: '전임 인계자', value: '김책임 (k_kim@gov.mock.kr, 내선 4201)' },
+        { label: '신임 인수자', value: '이선임 (lee_new@gov.mock.kr, 내선 4208)' },
+        { label: '인수인계 기간', value: '2026.10.15 ~ 2026.11.15 (1개월)' },
+        { label: '사업 규모', value: '총 45억 원 (국비 70% / 시비 30%)' },
+        { label: '전산 시스템', value: 'e나라도움, 온나라 전자결재, 보조금24', isLink: true },
+        { label: '업무 중요도', value: '★ 1급 핵심사업 (기재부 합동감사 대상)' },
+        { label: '비상 연락망', value: 'e나라도움 헬프데스크: 1670-9595' },
+        { label: '최종 검토자', value: '박부장 (검토완료 · 2026.10.15 승인)' }
+      ]
+    },
+    footnotes: [
+      { number: 1, text: '보조금 관리에 관한 법률 제26조의2 (보조사업의 집행 점검 및 현장 실사 의무 규정)' },
+      { number: 2, text: '2026년도 국고보조금 통합관리지침 제14조 (사업비 전용카드 사용 및 지출증빙 원칙)' },
+      { number: 3, text: 'e나라도움 운영지원센터 발행 [국고보조사업 정산 및 반납 실무 매뉴얼 v4.1] p.88 참조' }
+    ],
+    milestones: [
+      {
+        id: 'm1',
+        phase: '1단계: 사전 인수',
+        period: 'D-30 ~ D-15',
+        title: '전산망 권한 승계 & 사업 기본계획서 검토',
+        status: 'completed',
+        progress: 100,
+        owner: '김책임 → 이선임',
+        tasks: ['e나라도움 총괄담당자 인증서 등록', '온나라 결재라인 승계 공문 발송', '최근 3개년 정산 감사보고서 열람']
+      },
+      {
+        id: 'm2',
+        phase: '2단계: 집중 동행',
+        period: 'D-14 ~ D-1',
+        title: '실무 프로세스 동행 & 현장 실사 참관',
+        status: 'in_progress',
+        progress: 68,
+        owner: '합동 수행',
+        tasks: ['청년 창업팀 40개소 중간 모니터링', '50만원 이상 지출 건 세금계산서 대조', '비교견적서 누락 건 보완 공문 발송']
+      },
+      {
+        id: 'm3',
+        phase: '3단계: 단독 수행',
+        period: 'D-Day ~ D+30',
+        title: '신임자 주도 집행 승인 & 정산 보고서 작성',
+        status: 'upcoming',
+        progress: 15,
+        owner: '이선임 (단독)',
+        tasks: ['4분기 2차 보조금 교부결정 통지', 'e나라도움 집행 불인정 잔액 회수', '시의회 정례회 감사 질의서 대응']
+      },
+      {
+        id: 'm4',
+        phase: '4단계: 결산 완료',
+        period: 'D+31 ~ D+60',
+        title: '최종 집행잔액 국고 반납 및 인계 종료',
+        status: 'upcoming',
+        progress: 0,
+        owner: '이선임 / 박부장',
+        tasks: ['회계법인 위탁정산 최종 보고서 수령', '국고 반납고지서 발행 및 납부', '차년도 이월 승인 신청']
+      }
+    ],
+    processSteps: [
+      {
+        stepNumber: 1,
+        title: '사업공고 & 신청접수',
+        duration: '2주 소요',
+        system: '보조금24 / 온나라',
+        keyAction: '모집공고 게재, 적격 요건 필터링',
+        checkpoint: '사업자등록증 연령 요건(만 39세 이하) 확인',
+        questionCount: 3
+      },
+      {
+        stepNumber: 2,
+        title: '선정심사 & 협약체결',
+        duration: '10일 소요',
+        system: '평가관리시스템',
+        keyAction: '서면·발표 심사 종합표 작성 및 선정 고시',
+        checkpoint: '중복 수혜 방지망(중기부/지자체) 전산 조회',
+        questionCount: 4,
+        isCritical: true
+      },
+      {
+        stepNumber: 3,
+        title: '계좌개설 & 교부결정',
+        duration: '5일 소요',
+        system: 'e나라도움 (가상계좌)',
+        keyAction: '전용계좌 바인딩, 자부담금 선입금 확인',
+        checkpoint: '자부담(10%) 통장 잔액 증명 확인 필수',
+        questionCount: 8,
+        isCritical: true
+      },
+      {
+        stepNumber: 4,
+        title: '집행 모니터링',
+        duration: '상시 (월 1회)',
+        system: 'e나라도움 집행관리',
+        keyAction: '50만원 이상 결제건 비교견적서 및 세금계산서 검증',
+        checkpoint: '특수관계인(가족/친인척) 거래 방지 확인',
+        questionCount: 12,
+        isCritical: true
+      },
+      {
+        stepNumber: 5,
+        title: '정산검증 & 잔액반납',
+        duration: '연말 30일',
+        system: '회계감사시스템',
+        keyAction: '위탁 회계법인 검증 조서 취합 및 불인정분 환수',
+        checkpoint: '발생 이자 및 국고보조금 잔액 납부고지서 발송',
+        questionCount: 6
+      }
+    ],
+    checklist: [
+      {
+        category: '전산 권한 및 시스템',
+        completed: 4,
+        total: 4,
+        items: [
+          { text: 'e나라도움 총괄관리자 직무 권한 승계', done: true },
+          { text: '온나라 전자결재 기안자 등록 및 서명 파일 교체', done: true },
+          { text: '기재부 보조금통합포털 모니터링 계정 발급', done: true },
+          { text: '창업기업 포털 알림톡 발송 마스터 권한 확인', done: true }
+        ]
+      },
+      {
+        category: '예산 및 회계 관리',
+        completed: 3,
+        total: 4,
+        items: [
+          { text: '2026년도 세입·세출 예산서 및 산출내역서 복사본 수령', done: true },
+          { text: '1차 교부집행 내역(28억 원) 실물 통장 대조', done: true },
+          { text: '자부담금 완납 증명서 40개 기업 전수 검증', done: true },
+          { text: '집행 불인정 잠정 대상(3건, 약 820만원) 소명서 수령', done: false }
+        ]
+      },
+      {
+        category: '대외 협력 및 감사 대비',
+        completed: 2,
+        total: 4,
+        items: [
+          { text: '지정 회계법인(삼도회계) 담당 공인회계사 미팅 완료', done: true },
+          { text: '시의회 기획재정위원회 사전 질의서 대비 Q&A 작성', done: true },
+          { text: '중간 현장점검 불시 방문 일정표 수립', done: false },
+          { text: '창업보육센터 공간 임대차 재계약 공문 발송', done: false }
+        ]
+      }
+    ],
+    blocks: [
+      {
+        id: 'block-01',
+        sectionNumber: '1.',
+        title: '개요 및 업무 목적',
+        level: 1,
+        type: 'paragraph',
+        sentences: [
+          {
+            id: 's-1-1',
+            text: '본 인수인계서는 2026년도 청년 창업 활성화 국고보조사업의 원활한 운영과 차질 없는 예산 집행을 위해 작성되었다.',
+            isBold: true
+          },
+          {
+            id: 's-1-2',
+            text: '해당 사업은 기획재정부 국고보조금 통합관리지침과 지방자치단체 보조금 관리조례를 준용하며, 매년 정기 정부합동감사 대상이므로 한 줄의 지출이라도 증빙 누락이 없어야 한다.',
+            footnoteNumber: 1
+          },
+          {
+            id: 's-1-3',
+            text: '~~어려워 보이지만 전임자가 적어둔 족보만 잘 따라하면 시말서 쓸 일은 없다.~~',
+            isStrikeThrough: true
+          },
+          {
+            id: 's-1-4',
+            text: '본문 중 푸른색으로 표시되거나 질문 배지가 있는 문장을 클릭하면, 선배 담당자들이 남긴 바통 Q&A 실무 답변과 행정 근거를 즉시 열람할 수 있다.',
+            isHighlight: true,
+            hasQuestions: true,
+            questionCount: 2
+          }
+        ]
+      },
+      {
+        id: 'block-02',
+        sectionNumber: '2.',
+        title: '업무 추진 절차 및 연간 추진 일정',
+        level: 1,
+        type: 'table',
+        sentences: [
+          {
+            id: 's-2-1',
+            text: '본 사업의 업무는 사전 준비, 접수 및 심사, 교부 및 집행, 사후 정산 등 총 5개 핵심 프로세스로 진행되며 연중 상시 모니터링이 요구된다.'
+          },
+          {
+            id: 's-2-2',
+            text: '각 단계별 소요 기간 및 신임 담당자가 반드시 점검해야 할 핵심 법정 서류와 유의사항은 아래의 업무 프로세스 표준 표와 같다.',
+            isBold: true
+          }
+        ],
+        tableData: {
+          title: '청년 창업지원 보조사업 단계별 업무 처리 절차서',
+          columns: ['단계', '추진 절차', '소요 기간', '전산망', '핵심 업무 및 필수 확인 서류', '관련 Q&A'],
+          rows: [
+            {
+              cells: [
+                { id: 't-1-1', text: '1단계', isBold: true },
+                { id: 't-1-2', text: '사업공고 & 신청접수' },
+                { id: 't-1-3', text: '2주' },
+                { id: 't-1-4', text: '보조금24 / 온나라' },
+                { id: 't-1-5', text: '모집공고 게재, 적격 요건 필터링, 만 39세 이하 사업자등록증 검증' },
+                { id: 't-1-6', text: '표준 규정' }
+              ]
+            },
+            {
+              cells: [
+                { id: 't-2-1', text: '2단계', isBold: true },
+                { id: 't-2-2', text: '선정심사 & 협약체결' },
+                { id: 't-2-3', text: '10일' },
+                { id: 't-2-4', text: '평가관리시스템' },
+                { id: 't-2-5', text: '서면·발표 심사 종합표 작성, 지자체 중복 수혜 전산망 교차 조회' },
+                { id: 't-2-6', text: '감사 주의' }
+              ]
+            },
+            {
+              cells: [
+                { id: 't-3-1', text: '3단계', isBold: true },
+                { id: 't-3-2', text: '계좌개설 & 교부결정' },
+                { id: 't-3-3', text: '5일' },
+                { id: 't-3-4', text: 'e나라도움 (가상계좌)' },
+                { id: 't-3-5', text: '전용 가상계좌 바인딩, 자부담금(10%) 선입금 통장 잔액 증명 확인 필수', isBold: true, hasQuestions: true, questionCount: 4 },
+                { id: 't-3-6', text: 'Q&A 4건', hasQuestions: true, questionCount: 4 }
+              ]
+            },
+            {
+              cells: [
+                { id: 't-4-1', text: '4단계', isBold: true },
+                { id: 't-4-2', text: '월별 집행 모니터링' },
+                { id: 't-4-3', text: '상시 (월 1회)' },
+                { id: 't-4-4', text: 'e나라도움 집행관리' },
+                { id: 't-4-5', text: '50만원 이상 결제건 비교견적서 및 세금계산서 검증, 특수관계인 거래 방지', isBold: true, hasQuestions: true, questionCount: 5 },
+                { id: 't-4-6', text: 'Q&A 5건', hasQuestions: true, questionCount: 5 }
+              ]
+            },
+            {
+              cells: [
+                { id: 't-5-1', text: '5단계', isBold: true },
+                { id: 't-5-2', text: '정산검증 & 잔액반납' },
+                { id: 't-5-3', text: '연말 30일' },
+                { id: 't-5-4', text: '회계감사시스템' },
+                { id: 't-5-5', text: '위탁 회계법인 검증 조서 취합, 불인정분 환수 및 국고 반납고지서 발송', hasQuestions: true, questionCount: 3 },
+                { id: 't-5-6', text: 'Q&A 3건', hasQuestions: true, questionCount: 3 }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        id: 'block-02-1',
+        sectionNumber: '2.1.',
+        title: '인수인계 추진 일정표 (D-30 ~ D+60)',
+        level: 2,
+        type: 'paragraph',
+        sentences: [
+          {
+            id: 's-2-3',
+            text: '인수인계는 업무의 연속성과 감사 리스크 방지를 위해 총 4개 구간에 걸쳐 단계적으로 이루어진다.'
+          },
+          {
+            id: 's-2-4',
+            text: '1. [사전 인수 단계 (D-30 ~ D-15)]: e나라도움 총괄담당자 인증서 등록, 온나라 결재라인 승계 공문 발송 및 최근 3개년 정산 감사보고서 열람.',
+            isBold: true
+          },
+          {
+            id: 's-2-5',
+            text: '2. [집중 동행 단계 (D-14 ~ D-1)]: 청년 창업팀 40개소 중간 모니터링 동행, 50만원 이상 지출 건 세금계산서 및 비교견적서 대조 실습.',
+            isHighlight: true
+          },
+          {
+            id: 's-2-6',
+            text: '3. [단독 수행 단계 (D-Day ~ D+30)]: 신임자 주도 4분기 보조금 교부결정 통지 및 집행 불인정 잔액 회수 독촉장 발송.'
+          },
+          {
+            id: 's-2-7',
+            text: '4. [최종 결산 단계 (D+31 ~ D+60)]: 지정 회계법인 위탁정산 보고서 수령, 발생 이자 및 집행잔액 국고 반납 고지서 납부 영수증 수령 후 인계 절차 종료.'
+          }
+        ]
+      },
+      {
+        id: 'block-03',
+        sectionNumber: '3.',
+        title: '사업비 전용계좌 개설 및 보조금 교부 절차',
+        level: 1,
+        type: 'paragraph',
+        sentences: [
+          {
+            id: 's-3-1',
+            text: '선정된 40개 청년 창업기업은 통보일로부터 7영업일 이내에 e나라도움 전용 가상계좌를 개설 완료해야 한다.'
+          },
+          {
+            id: 's-3-2',
+            text: '사업비 전용 계좌 개설 시 승인 공문 원본과 사업자등록증 사본을 은행 영업점에 직접 제출해야 한다.',
+            hasQuestions: true,
+            questionCount: 3,
+            isHighlight: true
+          },
+          {
+            id: 's-3-3',
+            text: '~~작년에 모 기업 대표가 온라인 비대면 계좌로 신청했다가 2주 동안 승인이 지연되어 전임자가 야근을 했다.~~',
+            isStrikeThrough: true
+          },
+          {
+            id: 's-3-4',
+            text: '자부담금(총사업비의 10%)은 보조금 1차 교부일 전일까지 전용 통장에 전액 선입금되어야 하며, 미입금 시 교부 결정이 자동 취소된다.',
+            hasQuestions: true,
+            questionCount: 4,
+            isBold: true,
+            isHighlight: true,
+            footnoteNumber: 2
+          },
+          {
+            id: 's-3-5',
+            text: '교부 신청서류가 완비되면 담당자는 3영업일 이내에 지출원인행위 결재를 올리고, e나라도움 이체 의뢰를 확정한다.'
+          }
+        ]
+      },
+      {
+        id: 'block-04',
+        sectionNumber: '4.',
+        title: '월별 집행 점검 및 증빙 서류 대조 (중요)',
+        level: 1,
+        type: 'paragraph',
+        sentences: [
+          {
+            id: 's-4-1',
+            text: '모든 사업비 집행은 e나라도움 전용 클린카드로 결제하거나 전자세금계산서 기반 계좌이체 방식으로만 인정된다.'
+          },
+          {
+            id: 's-4-2',
+            text: '정산 검증 단계에서는 50만원 이상 단일 지출 건에 대해 견적서, 비교견적서, 전자세금계산서, 이체확인증, 검수조서 등 5종 증빙을 대조한다.',
+            hasQuestions: true,
+            questionCount: 5,
+            isBold: true,
+            isHighlight: true
+          },
+          {
+            id: 's-4-3',
+            text: '특히 동일 대표자가 운영하는 타 법인 또는 직계존비속이 임원으로 있는 업체와의 거래는 일체 금지되며 적발 시 전액 환수 조치된다.',
+            isBold: true
+          },
+          {
+            id: 's-4-4',
+            text: '연구개발비 내 인건비 항목은 반드시 4대보험 가입내역서와 급여이체증, 근무일지를 매월 10일까지 제출받아야 집행 승인이 가능하다.',
+            hasQuestions: true,
+            questionCount: 2,
+            isHighlight: true
+          }
+        ]
+      },
+      {
+        id: 'block-05',
+        sectionNumber: '5.',
+        title: '회계감사 및 불인정 잔액 반납 처리',
+        level: 1,
+        type: 'paragraph',
+        sentences: [
+          {
+            id: 's-5-1',
+            text: '사업 종료일(11월 30일) 이후 15일 이내에 위탁 회계법인에 정산보고서와 증빙철 전량을 이관해야 한다.',
+            footnoteNumber: 3
+          },
+          {
+            id: 's-5-2',
+            text: '회계감사 결과 발생한 불인정 집행액 및 집행 잔액, 발생 이자는 e나라도움 반납결의를 통해 국고로 일괄 반납 고지된다.',
+            hasQuestions: true,
+            questionCount: 3,
+            isHighlight: true
+          },
+          {
+            id: 's-5-3',
+            text: '창업기업의 이의신청은 통보 후 7일 이내 서면으로만 접수하며, 정당한 사유가 인정될 경우 소명위원회를 개최한다.'
+          }
+        ]
+      },
+      {
+        id: 'block-06',
+        sectionNumber: '6.',
+        title: '자주 묻는 질문(FAQ) 및 전임자 특별 당부사항',
+        level: 1,
+        type: 'alert',
+        alertType: 'tip',
+        alertTitle: '💡 전임자 김책임의 실무 인수인계 꿀팁 노트',
+        sentences: [
+          {
+            id: 's-6-1',
+            text: '1. e나라도움 시스템은 매주 수요일 오후 7시부터 정기 점검이 있으므로 대량 이체 결재는 수요일 오후 5시 이전에 끝낼 것.'
+          },
+          {
+            id: 's-6-2',
+            text: '2. 창업팀 중 대표자 주소지 변경이나 법인 전환 이슈가 발생하면 사전 승인 공문 없이 임의 변경하지 못하도록 안내할 것.'
+          },
+          {
+            id: 's-6-3',
+            text: '3. 업무 중 모르는 부분이 생기면 본 인수인계서의 문장을 눌러 바통 Q&A 질문을 확인하거나 바로 새 질문을 남기면 전임자 메일로 알림이 간다.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'doc-infra-2026',
+    title: '사내 IT 전산망 및 클라우드 인프라 유지보수 인수인계서',
+    categories: ['업무 인수인계', '정보보안', '클라우드', '전산실', '2026년도'],
+    lastModified: '2026-10-17 17:20:00',
+    viewCount: 890,
+    version: 'v3.1 (게시본)',
+    summary: '사내 온프레미스 서버룸 항온항습기 관리부터 AWS/GCP 클라우드 VPC 라우팅, SSL 인증서 자동 갱신 및 침해사고 대응 가이드입니다.',
+    infoBox: {
+      title: 'IT 인프라 및 네트워크 유지보수',
+      subtitle: '전산보안팀 운영 인수인계서',
+      emblemText: 'INFRA-SYS',
+      items: [
+        { label: '주관 부서', value: '정보전산본부 IT인프라팀' },
+        { label: '전임 인계자', value: '정수석 (sys_admin@corp.mock.kr)' },
+        { label: '신임 인수자', value: '강선임 (infra_lee@corp.mock.kr)' },
+        { label: '인수인계 기간', value: '2026.10.10 ~ 2026.11.10' },
+        { label: '관리 자산', value: '서버 42대, AWS/GCP 12개 리전 VPC' },
+        { label: '관제 솔루션', value: 'Datadog, Grafana, Slack Bot' }
+      ]
+    },
+    footnotes: [
+      { number: 1, text: '정보통신망 이용촉진 및 정보보호 등에 관한 법률 제28조 (보안점검 주기)' }
+    ],
+    milestones: [
+      {
+        id: 'im1',
+        phase: '1단계: 마스터 키 승계',
+        period: 'D-20 ~ D-10',
+        title: '클라우드 IAM 루트 및 방화벽 OTP 인계',
+        status: 'completed',
+        progress: 100,
+        owner: '정수석',
+        tasks: ['AWS Org 마스터 콘솔 권한 이전', '전산실 지문인식 등록']
+      },
+      {
+        id: 'im2',
+        phase: '2단계: 모의 장애 훈련',
+        period: 'D-9 ~ D-1',
+        title: 'DB 레플리카 페일오버 및 SSL 갱신 실습',
+        status: 'in_progress',
+        progress: 75,
+        owner: '합동 수행',
+        tasks: ['주서버 단절 시뮬레이션', '와일드카드 인증서 수동 교체']
+      }
+    ],
+    processSteps: [
+      {
+        stepNumber: 1,
+        title: '일일 모니터링',
+        duration: '매일 09:00',
+        system: 'Grafana',
+        keyAction: 'CPU/Memory 임계치 점검',
+        checkpoint: '90% 초과 파드 확인',
+        questionCount: 2
+      },
+      {
+        stepNumber: 2,
+        title: '보안 패치 배포',
+        duration: '매주 목요일 23:00',
+        system: 'Ansible',
+        keyAction: 'OS 커널 패치',
+        checkpoint: '롤백 스냅샷 확인',
+        questionCount: 4,
+        isCritical: true
+      }
+    ],
+    checklist: [
+      {
+        category: '루트 계정 및 보안키',
+        completed: 3,
+        total: 3,
+        items: [
+          { text: 'AWS/GCP 마스터 콘솔 로그인 2FA 등록', done: true },
+          { text: '서버룸 물리 비상키 열쇠함 위치 확인', done: true },
+          { text: 'VPN 게이트웨이 인증서 백업', done: true }
+        ]
+      }
+    ],
+    blocks: [
+      {
+        id: 'ib-01',
+        sectionNumber: '1.',
+        title: '시스템 구성 개요',
+        level: 1,
+        type: 'paragraph',
+        sentences: [
+          {
+            id: 'is-1-1',
+            text: '사내 주 전산 인프라는 하이브리드 클라우드 모델로 운영되며 내부망과 외부망이 망분리되어 있다.',
+            isBold: true
+          },
+          {
+            id: 'is-1-2',
+            text: '전산실 출입 시에는 정보보호 서약서를 작성하고 출입 기록대장에 자필 서명 후 보안 담당자의 승인을 득해야 한다.',
+            hasQuestions: true,
+            questionCount: 2,
+            isHighlight: true
+          }
+        ]
+      }
+    ]
+  }
+];
+
+export const MOCK_KIN_THREADS: Record<string, KinThread> = {
+  's-3-2': {
+    id: 'thread-s32',
+    documentId: 'doc-subsidy-2026',
+    blockId: 'block-03',
+    sentenceId: 's-3-2',
+    sentenceQuote: '사업비 전용 계좌 개설 시 승인 공문 원본과 사업자등록증 사본을 은행 영업점에 직접 제출해야 한다.',
+    title: 'e나라도움 가상계좌 개설할 때 온라인으로는 안 되고 꼭 영업점 방문해야 하나요?',
+    content: '신임 담당자입니다. 선정된 청년 창업팀들 중 지방에 있거나 1인 기업인 대표들이 인터넷 뱅킹이나 비대면 앱으로 계좌 개설하면 안 되냐고 빗발치게 묻고 있습니다. 은행에 직접 가야만 하는 공식 근거 규정과 예외가 있는지 궁금합니다!',
+    author: {
+      name: '신임이선임_2026',
+      role: '신임 인수자',
+      level: '초보',
+      badge: '새싹',
+      department: '청년창업지원과',
+      avatarColor: 'bg-emerald-500'
+    },
+    createdAt: '2026-10-16 11:24',
+    views: 342,
+    empathyCount: 28,
+    userEmpathized: true,
+    adoptedAnswerId: 'ans-s32-1',
+    status: 'RESOLVED',
+    tags: ['e나라도움', '사업비전용통장', '은행영업점방문', '국고보조금'],
+    answers: [
+      {
+        id: 'ans-s32-1',
+        author: {
+          name: '전임자_김책임',
+          role: '전임 인계자',
+          level: '태양신',
+          badge: '⭐ 태양신',
+          department: '청년창업지원과',
+          adoptRate: 98.4,
+          avatarColor: 'bg-amber-500'
+        },
+        content: `안녕하세요, 전임자 김책임입니다. 인계받으시자마자 기업들 문의에 당황하셨을 텐데요, 결론부터 말씀드리면 **'예외 없이 무조건 지정 은행 영업점 대면 방문 개설'**이 원칙입니다.
+
+1. **이유 및 시스템 연동 구조**:
+e나라도움 전용계좌는 일반 법인통장과 달리 한국재정정보원(e나라도움 망)과 전담은행 간 '국고보조금 전용 상품 코드(G-Bank)'로 묶여야 합니다. 비대면 통장 개설 시에는 이 국고보조금 코드 부여 기능이 누락되어 나중에 교부금 이체 시 계좌인증 오류(ERR_CODE: 4018)가 무조건 터집니다.
+
+2. **실무 꿀팁 (기업 안내 요령)**:
+- 협약 은행: 신한은행, IBK기업은행, NH농협은행 전국 영업점
+- 지참 필수 서류 3종: 
+  ① 구청 발행 보조사업 선정 승인 공문 원본 (전자관인 날인본)
+  ② 사업자등록증 사본
+  ③ 법인인감증명서(또는 개인대표 신분증)
+- 은행 방문 전 관할 지점에 미리 전화해서 '국고보조금 전용계좌(e나라도움 연계) 개설' 업무 취급 가능한지 확인하고 가라고 안내하면 헛걸음을 막을 수 있습니다.`,
+        createdAt: '2026-10-16 13:10',
+        isAdopted: true,
+        isOfficialReviewed: true,
+        reviewNote: '2026 기재부 보조금통합관리지침 제11조 및 신한·기업은행 업무 협약서 대조 확인 완료',
+        likes: 42,
+        userLiked: false,
+        evidenceLinks: [
+          {
+            title: '2026년도 국고보조금 통합관리지침',
+            sourceType: '규정/법령',
+            referenceLocation: '제11조 (보조사업 전용계좌의 개설 및 관리)'
+          },
+          {
+            title: 'e나라도움 보조사업자 계좌개설 매뉴얼 v4.0',
+            sourceType: '업무매뉴얼',
+            referenceLocation: 'p.14 ~ p.19 영업점 방문 필수 항목'
+          }
+        ],
+        comments: [
+          {
+            id: 'c1',
+            author: '신임이선임_2026',
+            content: '선배님 명쾌한 답변 정말 감사합니다! 안내문 서식에 그대로 반영해서 창업팀에 배포했습니다 ㅠㅠ',
+            createdAt: '2026-10-16 14:02'
+          },
+          {
+            id: 'c2',
+            author: '신한은행_공공영업부_박차장',
+            content: '맞습니다. 영업점 창구에 오셔서 "e나라도움 사업비 계좌" 개설하러 왔다고 말씀하셔야 전용 상품으로 개설됩니다.',
+            createdAt: '2026-10-16 15:40'
+          }
+        ]
+      },
+      {
+        id: 'ans-s32-2',
+        author: {
+          name: '감사팀_박수석',
+          role: '상급 검토자',
+          level: '은하신',
+          badge: '🌙 은하신',
+          department: '감사담당관실',
+          adoptRate: 94.2,
+          avatarColor: 'bg-indigo-600'
+        },
+        content: `감사팀 의견 덧붙입니다. 비대면 계좌로 잘못 개설하여 국고보조금이 일반 계좌로 섞여 집행될 경우, '보조금 관리에 관한 법률 제30조(법령 위반 등에 따른 교부 결정의 취소)' 위반으로 감사원 처분 요구 및 반환 명령이 내려질 수 있습니다. 
+
+반드시 공문상 명시된 공식 전용 계좌 사본(통장 표지)을 e나라도움 시스템에 등록 승인한 후 1차 교부금을 지급하시기 바랍니다.`,
+        createdAt: '2026-10-16 16:05',
+        isAdopted: false,
+        isOfficialReviewed: true,
+        reviewNote: '내부 감사 규정 준수 확인',
+        likes: 19,
+        evidenceLinks: [
+          {
+            title: '보조금 관리에 관한 법률',
+            sourceType: '규정/법령',
+            referenceLocation: '제30조 (교부결정의 취소)'
+          }
+        ],
+        comments: []
+      }
+    ]
+  },
+  's-3-4': {
+    id: 'thread-s34',
+    documentId: 'doc-subsidy-2026',
+    blockId: 'block-03',
+    sentenceId: 's-3-4',
+    sentenceQuote: '자부담금(총사업비의 10%)은 보조금 1차 교부일 전일까지 전용 통장에 전액 선입금되어야 하며, 미입금 시 교부 결정이 자동 취소된다.',
+    title: '자부담금이 단 10만원이라도 부족하거나 하루 늦게 입금되면 진짜 교부 취소인가요?',
+    content: '창업기업 한 곳이 자금 융통 문제로 자부담금 500만원 중 400만원만 먼저 넣고 나머지 100만원은 3일 뒤에 넣겠다고 사정하고 있습니다. 자동 취소 규정이 엄격한가요? 담당자 재량으로 기한을 연장해 줄 수 있는 근거 규정이 있는지 알고 싶습니다.',
+    author: {
+      name: '신임이선임_2026',
+      role: '신임 인수자',
+      level: '초보',
+      badge: '새싹',
+      department: '청년창업지원과',
+      avatarColor: 'bg-emerald-500'
+    },
+    createdAt: '2026-10-17 09:15',
+    views: 489,
+    empathyCount: 35,
+    userEmpathized: false,
+    adoptedAnswerId: 'ans-s34-1',
+    status: 'RESOLVED',
+    tags: ['자부담금', '선입금원칙', '교부결정취소', '보조금지침'],
+    answers: [
+      {
+        id: 'ans-s34-1',
+        author: {
+          name: '전임자_김책임',
+          role: '전임 인계자',
+          level: '태양신',
+          badge: '⭐ 태양신',
+          department: '청년창업지원과',
+          adoptRate: 98.4,
+          avatarColor: 'bg-amber-500'
+        },
+        content: `절대 분할 입금된 상태에서 1차 보조금을 교부하시면 안 됩니다! 
+
+**[핵심 규칙과 대응 방법]**
+1. **규정상 원칙**:
+기재부 지침상 자부담금 선입금 확인 없이 보조금을 교부하면 '업무상 주의의무 위반'으로 담당자 문책 대상입니다. 자부담이 100% 입금되지 않으면 교부 버튼을 누르시면 안 됩니다.
+
+2. **구제 방법 (공식 절차)**:
+무조건 취소하지 마시고, 다음 절차를 밟으세요:
+- '자부담금 납입 독촉 및 보완 요청 공문' 발송
+- 최대 5영업일 범위 내에서 '납입 연기 신청서'와 사유서를 대표자 직인 날인하여 서면 접수
+- 연기된 기한 내에 잔여 자부담금이 완납된 것을 '통장 거래내역서'로 확인 후 보조금 1차분 지급 결재 상신
+
+이렇게 서류를 구비해 두면 감사 때 "적법한 보완 기한을 부여하고 절차를 지켰다"고 완벽히 방어됩니다. 서식 파일은 [공통서식함 > 04_자부담보완신청서.hwpx]에 있습니다!`,
+        createdAt: '2026-10-17 10:20',
+        isAdopted: true,
+        isOfficialReviewed: true,
+        reviewNote: '기재부 유권해석례집 2025 p.124와 일치함',
+        likes: 54,
+        evidenceLinks: [
+          {
+            title: '기획재정부 국고보조금 질의회신집',
+            sourceType: '공문서',
+            referenceLocation: '2025-142호 자부담금 완납 전 교부금 지급의 하자 치유'
+          }
+        ],
+        comments: [
+          {
+            id: 'c3',
+            author: '동기_정선임',
+            content: '와 이거 진짜 꿀팁이네요... 작년에 저도 이거 몰라서 취소 공문 날릴 뻔했음',
+            createdAt: '2026-10-17 11:05'
+          }
+        ]
+      }
+    ]
+  },
+  's-4-2': {
+    id: 'thread-s42',
+    documentId: 'doc-subsidy-2026',
+    blockId: 'block-04',
+    sentenceId: 's-4-2',
+    sentenceQuote: '정산 검증 단계에서는 50만원 이상 단일 지출 건에 대해 견적서, 비교견적서, 전자세금계산서, 이체확인증, 검수조서 등 5종 증빙을 대조한다.',
+    title: '비교견적서 받을 때 온라인 오픈마켓(네이버페이, 쿠팡) 최저가 캡처도 비교견적으로 인정되나요?',
+    content: '청년 창업팀들이 서버 장비나 비품을 살 때 다른 오프라인 업체 견적서 받기 힘들다고 쿠팡이나 다나와 화면 캡처해서 첨부하는 경우가 많습니다. 이게 5종 증빙 중 비교견적서로 인정되는지, 규격이나 날짜가 어때야 하는지 정확한 기준을 알려주세요.',
+    author: {
+      name: '신임이선임_2026',
+      role: '신임 인수자',
+      level: '초보',
+      badge: '새싹',
+      department: '청년창업지원과',
+      avatarColor: 'bg-emerald-500'
+    },
+    createdAt: '2026-10-17 14:30',
+    views: 612,
+    empathyCount: 41,
+    userEmpathized: true,
+    adoptedAnswerId: 'ans-s42-1',
+    status: 'RESOLVED',
+    tags: ['비교견적서', '온라인캡처', '50만원이상지출', '검수조서'],
+    answers: [
+      {
+        id: 'ans-s42-1',
+        author: {
+          name: '전임자_김책임',
+          role: '전임 인계자',
+          level: '태양신',
+          badge: '⭐ 태양신',
+          department: '청년창업지원과',
+          adoptRate: 98.4,
+          avatarColor: 'bg-amber-500'
+        },
+        content: `네, 온라인 화면 캡처도 **'특정 요건을 갖추면 비교견적으로 정식 인정'**됩니다!
+
+**[인정 요건 4대 체크포인트]**:
+1. **동일 모델명 및 규격**: 단순 카테고리가 아니라 CPU/RAM/사양 등 동일 스펙이어야 함
+2. **캡처 날짜 명시**: 반드시 윈도우 우측 하단 시계 또는 브라우저 주소창과 캡처 날짜(구매일 이전 날짜)가 함께 나와야 함
+3. **VAT(부가세) 포함 여부 명시**: 캡처된 금액이 부가세 포함인지 별도인지 명확히 드러나야 함
+4. **검수조서 사진 필수**: 배송 완료 후 실제 사업장에 설치된 실물 사진(물품에 라벨 부착) 첨부
+
+단, 2,000만원 이상 계약 건은 지방계약법상 지정정보처리장치(나라장터 또는 수의계약 포털)를 거쳐야 하므로 캡처본으로는 불인정됩니다! 50만원 이상 ~ 2,000만원 미만 소액 비품 건만 해당됩니다.`,
+        createdAt: '2026-10-17 15:45',
+        isAdopted: true,
+        isOfficialReviewed: true,
+        reviewNote: '지방자치단체 입찰 및 계약 집행기준 행안부 예규 제282호 확인',
+        likes: 67,
+        evidenceLinks: [
+          {
+            title: '행정안전부 예규 제282호 지방계약 집행기준',
+            sourceType: '규정/법령',
+            referenceLocation: '제5장 수의계약 운영요령 3절 견적서 제출'
+          }
+        ],
+        comments: [
+          {
+            id: 'c4',
+            author: '신임이선임_2026',
+            content: '캡처 날짜랑 시계가 나와야 하는군요! 안 그래도 캡처본 몇 개 날짜가 안 보여서 다시 받으라고 해야겠습니다.',
+            createdAt: '2026-10-17 16:10'
+          }
+        ]
+      }
+    ]
+  },
+  's-1-4': {
+    id: 'thread-s14',
+    documentId: 'doc-subsidy-2026',
+    blockId: 'block-01',
+    sentenceId: 's-1-4',
+    sentenceQuote: '본문 중 푸른색으로 표시되거나 질문 배지가 있는 문장을 클릭하면, 선배 담당자들이 남긴 바통 Q&A 실무 답변과 행정 근거를 즉시 열람할 수 있다.',
+    title: '바통위키 인수인계서에서 바통 Q&A는 누구나 질문하고 답변할 수 있나요?',
+    content: '신임 담당자가 모르는 내용을 실시간으로 물어보면 전임자나 타 부서 선배들이 바로 답변해 주는 시스템인지, 권한 구조가 어떻게 되는지 궁금합니다.',
+    author: {
+      name: '신임이선임_2026',
+      role: '신임 인수자',
+      level: '초보',
+      badge: '새싹',
+      department: '청년창업지원과',
+      avatarColor: 'bg-emerald-500'
+    },
+    createdAt: '2026-10-15 10:00',
+    views: 180,
+    empathyCount: 15,
+    userEmpathized: false,
+    adoptedAnswerId: 'ans-s14-1',
+    status: 'RESOLVED',
+    tags: ['업무바통', '바통QnA', '인수인계위키', '담당자검토'],
+    answers: [
+      {
+        id: 'ans-s14-1',
+        author: {
+          name: '전임자_김책임',
+          role: '전임 인계자',
+          level: '태양신',
+          badge: '⭐ 태양신',
+          department: '청년창업지원과',
+          adoptRate: 98.4,
+          avatarColor: 'bg-amber-500'
+        },
+        content: `네! '업무 바통' 시스템에서는 문장을 클릭하여 누구나 궁금한 점을 질문할 수 있습니다. 
+
+- **질문자**: 신임자, 동료 직원 누구나 특정 문장을 인용하여 질문 등록 가능
+- **답변자**: 전임자, 감사팀, 상급자 등이 실무 팁과 근거 법령을 담아 답변 등록
+- **공식 검토**: 답변 중 정확한 행정 지침은 '담당자 검토 완료' 배지가 부여되어 신뢰할 수 있으며, 이 내용이 위키 본문에 정식 개정 반영됩니다.`,
+        createdAt: '2026-10-15 10:45',
+        isAdopted: true,
+        isOfficialReviewed: true,
+        likes: 31,
+        evidenceLinks: [],
+        comments: []
+      }
+    ]
+  },
+  's-4-4': {
+    id: 'thread-s44',
+    documentId: 'doc-subsidy-2026',
+    blockId: 'block-04',
+    sentenceId: 's-4-4',
+    sentenceQuote: '연구개발비 내 인건비 항목은 반드시 4대보험 가입내역서와 급여이체증, 근무일지를 매월 10일까지 제출받아야 집행 승인이 가능하다.',
+    title: '4대보험 가입 전 신규 입사자의 당월 급여는 보조금으로 집행 불가능한가요?',
+    content: '15일에 입사해서 익월 1일에 4대보험이 취득되는 인원의 경우 당월 급여를 보조금으로 지급하면 불인정 회수 대상이 되는지 궁금합니다.',
+    author: {
+      name: '신임이선임_2026',
+      role: '신임 인수자',
+      level: '초보',
+      badge: '새싹',
+      department: '청년창업지원과',
+      avatarColor: 'bg-emerald-500'
+    },
+    createdAt: '2026-10-17 18:20',
+    views: 295,
+    empathyCount: 22,
+    userEmpathized: true,
+    adoptedAnswerId: 'ans-s44-1',
+    status: 'RESOLVED',
+    tags: ['인건비', '4대보험', '연구개발비', '정산불인정'],
+    answers: [
+      {
+        id: 'ans-s44-1',
+        author: {
+          name: '전임자_김책임',
+          role: '전임 인계자',
+          level: '태양신',
+          badge: '⭐ 태양신',
+          department: '청년창업지원과',
+          adoptRate: 98.4,
+          avatarColor: 'bg-amber-500'
+        },
+        content: `원칙적으로 4대보험 '사업장가입자 자격취득 신고서' 접수증(공단 접수번호 표기)이 있으면 익월 정기 취득 전이라도 소급 인정됩니다!
+
+단, 근로계약서상 계약일자와 업무일지, 급여 계좌이체 내역이 100% 일치해야 하며 익월 10일까지 최종 4대보험 완납증명서를 사후 보완 제출받는 조건으로 조건부 승인하셔야 합니다.`,
+        createdAt: '2026-10-17 19:15',
+        isAdopted: true,
+        isOfficialReviewed: true,
+        likes: 38,
+        evidenceLinks: [],
+        comments: []
+      }
+    ]
+  },
+  's-5-2': {
+    id: 'thread-s52',
+    documentId: 'doc-subsidy-2026',
+    blockId: 'block-05',
+    sentenceId: 's-5-2',
+    sentenceQuote: '회계감사 결과 발생한 불인정 집행액 및 집행 잔액, 발생 이자는 e나라도움 반납결의를 통해 국고로 일괄 반납 고지된다.',
+    title: '불인정 금액이 발생했을 때 창업기업이 반납을 거부하면 어떻게 조치하나요?',
+    content: '회계법인 감사 결과 150만원이 불인정되었는데 기업 대표가 억울하다며 반납을 완강히 거부하고 연락을 피하고 있습니다. 환수 절차와 압류 등 행정절차법상 이행 단계를 알고 싶습니다.',
+    author: {
+      name: '신임이선임_2026',
+      role: '신임 인수자',
+      level: '초보',
+      badge: '새싹',
+      department: '청년창업지원과',
+      avatarColor: 'bg-emerald-500'
+    },
+    createdAt: '2026-10-18 09:30',
+    views: 380,
+    empathyCount: 19,
+    userEmpathized: false,
+    adoptedAnswerId: 'ans-s52-1',
+    status: 'RESOLVED',
+    tags: ['불인정반납', '보조금환수', '독촉고지', '지방세체납처분'],
+    answers: [
+      {
+        id: 'ans-s52-1',
+        author: {
+          name: '감사팀_박수석',
+          role: '상급 검토자',
+          level: '은하신',
+          badge: '🌙 은하신',
+          department: '감사담당관실',
+          adoptRate: 94.2,
+          avatarColor: 'bg-indigo-600'
+        },
+        content: `이런 악성 미반납 건은 즉시 절차에 착수해야 회계연도 내에 마무리됩니다.
+
+1. **1차 반납고지서 발송**: 납부기한 15일 지정 (내용증명 등기우편)
+2. **독촉장 발송**: 1차 기한 경과 시 10일 이내 독촉장 발송 (연체 가산금 3% 부과 예고)
+3. **제재 조치 등록**: 기재부 e나라도움 '부정수급자 통합관리시스템'에 제재 대상 등록 (향후 5년간 정부 보조사업 신청 자격 박탈)
+4. **지방세외수입징수법에 따른 체납처분**: 세무과로 징수 위탁 이관
+
+이 절차를 단계별로 안내하면 95% 이상은 독촉장 단계에서 자진 납부합니다. 관련 공문 서식은 [감사팀 공유문서함 > 부정수급_환수독촉공문_표준안.hwpx]를 참고하세요.`,
+        createdAt: '2026-10-18 10:45',
+        isAdopted: true,
+        isOfficialReviewed: true,
+        likes: 47,
+        evidenceLinks: [
+          {
+            title: '보조금 관리에 관한 법률 제33조의2',
+            sourceType: '규정/법령',
+            referenceLocation: '제33조의2 (보조금수령자에 대한 보조금의 환수)'
+          }
+        ],
+        comments: []
+      }
+    ]
+  }
+};
