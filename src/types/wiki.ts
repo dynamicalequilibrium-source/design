@@ -28,6 +28,7 @@ export interface KinAnswer {
   createdAt: string;
   isAdopted: boolean; // 질문자 채택 답변
   isOfficialReviewed: boolean; // 담당자 검토 완료 배지
+  evidenceNote?: {title: string; location: string; verified: boolean};
   reviewNote?: string; // "2026년도 개정 지침 반영 확인 완료"
   likes: number;
   userLiked?: boolean;
@@ -154,3 +155,4 @@ export interface WikiDocument {
   processSteps: ProcessStep[];
   checklist: ChecklistCategory[];
 }
+

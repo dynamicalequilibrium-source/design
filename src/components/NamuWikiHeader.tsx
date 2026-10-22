@@ -60,7 +60,7 @@ export const NamuWikiHeader: React.FC<NamuWikiHeaderProps> = ({
     <header className="sticky top-0 z-30 bg-[#00a495] text-white shadow-md">
       {/* NamuWiki Top Global Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-13 gap-4">
+        <div className="flex items-center justify-between h-13 gap-2 sm:gap-4">
           
           {/* Logo & Document Switcher */}
           <div className="flex items-center gap-3 shrink-0">
@@ -127,7 +127,7 @@ export const NamuWikiHeader: React.FC<NamuWikiHeaderProps> = ({
           </div>
 
           {/* Wiki Quick Search Bar */}
-          <div className="relative flex-1 max-w-md mx-2">
+          <div className="relative flex-1 min-w-0 max-w-md mx-2">
             <div className="relative">
               <input
                 type="text"
@@ -271,3 +271,4 @@ export const NamuWikiHeader: React.FC<NamuWikiHeaderProps> = ({
     </header>
   );
 };
+
