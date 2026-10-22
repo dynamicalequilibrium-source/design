@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   KinThread, 
   KinAnswer, 
@@ -31,18 +31,24 @@ interface NaverKinModalProps {
   sentence: WikiSentence;
   block: WikiBlock;
   thread?: KinThread;
+  draftKey: string;
+  threads: KinThread[];
+  onSelectThread: (id: string) => void;
   onClose: () => void;
-  onAddAnswer: (threadId: string, answerText: string, evidenceTitle: string, evidenceLoc: string) => void;
-  onCreateThread: (sentenceId: string, quote: string, title: string, content: string) => void;
+  onAddAnswer: (threadId: string, answerText: string, evidenceTitle: string, evidenceLoc: string) => Promise<void>;
+  onCreateThread: (sentenceId: string, quote: string, title: string, content: string) => Promise<void>;
   onToggleEmpathy: (threadId: string) => void;
   onToggleAnswerLike: (threadId: string, answerId: string) => void;
-  onAddComment: (threadId: string, answerId: string, commentText: string) => void;
+  onAddComment: (threadId: string, answerId: string, commentText: string) => Promise<void>;
 }
 
 export const NaverKinModal: React.FC<NaverKinModalProps> = ({
   sentence,
   block,
   thread,
+  threads,
+  onSelectThread,
+  draftKey,
   onClose,
   onAddAnswer,
   onCreateThread,
@@ -50,19 +56,51 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
   onToggleAnswerLike,
   onAddComment
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    dialog?.querySelector<HTMLElement>('button, input, select, textarea')?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {event.stopPropagation(); onClose();}
+      if (event.key !== 'Tab' || !dialog) return;
+      const nodes = Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input, select, textarea')).filter(n => n.getClientRects().length);
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      if (event.shiftKey && document.activeElement === first) {event.preventDefault(); last?.focus();}
+      if (!event.shiftKey && document.activeElement === last) {event.preventDefault(); first?.focus();}
+    };
+    document.addEventListener('keydown', key);
+    return () => document.removeEventListener('keydown', key);
+  }, []);
+  function useDraft<T>(field: string, fallback: T) {
+    const answerScope = ['answer', 'evidenceTitle', 'evidenceLoc'].includes(field) ? `:${thread?.id || 'new'}` : '';
+    const key = `baton:sample:${draftKey}${answerScope}:${field}`;
+    const read = () => {
+      try {return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback;}
+      catch {return fallback;}
+    };
+    const [stored, setStored] = useState<{key: string; value: T}>(() => ({key, value: read()}));
+    const value = stored.key === key ? stored.value : read();
+    const setValue = (next: T) => {
+      setStored({key, value: next});
+      try {localStorage.setItem(key, JSON.stringify(next));}
+      catch {setError('이 브라우저에 임시저장하지 못했습니다. 입력 내용은 현재 화면에 유지됩니다.');}
+    };
+    return [value, setValue] as const;
+  }
   const [activeTab, setActiveTab] = useState<'view' | 'new_question' | 'write_answer'>(
     thread ? 'view' : 'new_question'
   );
 
+  const [error, setError] = useState('');
   // Answer creation state
-  const [answerContent, setAnswerContent] = useState('');
-  const [evidenceTitle, setEvidenceTitle] = useState('');
-  const [evidenceLoc, setEvidenceLoc] = useState('');
+  const [answerContent, setAnswerContent] = useDraft('answer', '');
+  const [evidenceTitle, setEvidenceTitle] = useDraft('evidenceTitle', '');
+  const [evidenceLoc, setEvidenceLoc] = useDraft('evidenceLoc', '');
   const [isAnswerSubmitting, setIsAnswerSubmitting] = useState(false);
 
   // New Question state
-  const [newTitle, setNewTitle] = useState('');
-  const [newContent, setNewContent] = useState('');
+  const [newTitle, setNewTitle] = useDraft('title', '');
+  const [newContent, setNewContent] = useDraft('content', '');
 
   // Comment input per answer
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -76,31 +114,36 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
     setOpenComments(prev => ({ ...prev, [answerId]: !prev[answerId] }));
   };
 
-  const handleSubmitComment = (answerId: string) => {
+  const handleSubmitComment = async (answerId: string) => {
     const text = commentInputs[answerId]?.trim();
-    if (!text || !thread) return;
-    onAddComment(thread.id, answerId, text);
-    setCommentInputs(prev => ({ ...prev, [answerId]: '' }));
-    setOpenComments(prev => ({ ...prev, [answerId]: true }));
+    if (!text || !thread || isAnswerSubmitting) return;
+    setIsAnswerSubmitting(true); setError('');
+    try {
+      await onAddComment(thread.id, answerId, text);
+      setCommentInputs(prev => ({...prev, [answerId]: ''}));
+      setOpenComments(prev => ({...prev, [answerId]: true}));
+    } catch (e) {setError(e instanceof Error ? e.message : '저장하지 못했습니다. 입력 내용은 유지됩니다.');}
+    finally {setIsAnswerSubmitting(false);}
   };
-
-  const handleSubmitAnswer = (e: React.FormEvent) => {
+  const handleSubmitAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!answerContent.trim() || !thread) return;
-    setIsAnswerSubmitting(true);
-    onAddAnswer(thread.id, answerContent, evidenceTitle, evidenceLoc);
-    setAnswerContent('');
-    setEvidenceTitle('');
-    setEvidenceLoc('');
-    setIsAnswerSubmitting(false);
-    setActiveTab('view');
+    if (!answerContent.trim() || !thread || isAnswerSubmitting) return;
+    setIsAnswerSubmitting(true); setError('');
+    try {
+      await onAddAnswer(thread.id, answerContent, evidenceTitle, evidenceLoc);
+      setAnswerContent(''); setEvidenceTitle(''); setEvidenceLoc(''); setActiveTab('view');
+    } catch (e) {setError(e instanceof Error ? e.message : '저장하지 못했습니다. 입력 내용은 유지됩니다.');}
+    finally {setIsAnswerSubmitting(false);}
   };
-
-  const handleSubmitNewQuestion = (e: React.FormEvent) => {
+  const handleSubmitNewQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim()) return;
-    onCreateThread(sentence.id, sentence.text, newTitle, newContent);
-    setActiveTab('view');
+    if (!newTitle.trim() || !newContent.trim() || isAnswerSubmitting) return;
+    setIsAnswerSubmitting(true); setError('');
+    try {
+      await onCreateThread(sentence.id, sentence.text, newTitle, newContent);
+      setNewTitle(''); setNewContent(''); setActiveTab('view');
+    } catch (e) {setError(e instanceof Error ? e.message : '등록하지 못했습니다. 입력 내용은 유지됩니다.');}
+    finally {setIsAnswerSubmitting(false);}
   };
 
   return (
@@ -108,10 +151,16 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
       
       {/* Modal Container: Styled as NAVER JiSik-iN */}
       <div 
-        className="relative w-full max-w-3xl max-h-[92vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
+        ref={dialogRef} role="dialog" aria-modal="true" aria-label="문장별 질문과 답변" className="relative w-full max-w-3xl max-h-[92vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
         onClick={(e) => e.stopPropagation()}
       >
         
+        {error && <p role="alert" className="p-3 bg-red-50 text-red-800">{error}</p>}
+        {threads.length > 0 && <label className="p-3 text-sm">연결된 질문 {threads.length}건
+          <select aria-label="연결된 질문 선택" value={thread?.id || ''} onChange={e => {onSelectThread(e.target.value); setActiveTab('view');}} className="w-full border p-2">
+            {threads.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+          </select>
+        </label>}
         {/* 1. Baton Q&A Classic Top Green Header */}
         <div className="bg-[#00a495] text-white px-5 py-3 flex items-center justify-between shrink-0 shadow-xs">
           <div className="flex items-center gap-2.5">
@@ -221,7 +270,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
                               ? 'bg-emerald-100 text-emerald-800' 
                               : 'bg-amber-100 text-amber-800'
                           }`}>
-                            {thread.status === 'RESOLVED' ? '질문 해결됨' : '답변 대기중'}
+                            {thread.status === 'RESOLVED' ? '질문 해결됨' : thread.answers.length ? '답변 있음 · 미해결' : '답변 대기중'}
                           </span>
                           <span className="text-[11px] text-slate-400">내공 50</span>
                           <span className="text-[11px] text-slate-400">·</span>
@@ -267,7 +316,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
                       <div className="flex items-center gap-2">
                         {/* Interactive Empathy: 나도 궁금해요 */}
                         <button
-                          onClick={() => onToggleEmpathy(thread.id)}
+                          disabled title="이번 단계에서는 제공하지 않습니다"
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border ${
                             thread.userEmpathized
                               ? 'bg-rose-50 text-rose-600 border-rose-200'
@@ -374,6 +423,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
                           </div>
 
                           {/* Evidence Links */}
+                          {answer.evidenceNote?.title && <p className="text-xs p-2 bg-amber-50">사용자 입력 근거 · 확인 필요: {answer.evidenceNote.title} {answer.evidenceNote.location}</p>}
                           {answer.evidenceLinks && answer.evidenceLinks.length > 0 && (
                             <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
                               <div className="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center gap-1">
@@ -403,7 +453,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
                             <div className="flex items-center gap-2">
                               {/* Answer Like */}
                               <button
-                                onClick={() => onToggleAnswerLike(thread.id, answer.id)}
+                                disabled title="이번 단계에서는 제공하지 않습니다"
                                 className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition cursor-pointer border ${
                                   answer.userLiked
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -426,7 +476,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
                             </div>
 
                             <span className="text-[11px] text-slate-400">
-                              위키 본문 반영 대상 채택 답변
+                              검토 및 본문 반영은 후속 단계에서 제공합니다
                             </span>
                           </div>
 
@@ -605,8 +655,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
               <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-[11px] text-emerald-950 flex items-start gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  질문이 등록되면 해당 부서 전임 인계자 및 상급 검토자에게 실시간 알림이 발송되며, 
-                  채택된 답변은 검토를 거쳐 바통위키 본문 지침에 공식 개정 반영됩니다.
+                  질문은 이 샘플 서버에 저장됩니다. 알림 발송, 검토 승인 및 본문 반영은 아직 제공하지 않습니다.
                 </span>
               </div>
 
@@ -622,7 +671,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
                 )}
                 <button
                   type="submit"
-                  disabled={!newTitle.trim() || !newContent.trim()}
+                  disabled={isAnswerSubmitting || !newTitle.trim() || !newContent.trim()}
                   className="px-4 py-2 bg-[#00a495] hover:bg-[#008275] disabled:bg-slate-300 text-white font-bold text-xs rounded-lg shadow-xs transition cursor-pointer"
                 >
                   바통 질문 등록하기
@@ -652,3 +701,4 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
     </div>
   );
 };
+

@@ -4,17 +4,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { MOCK_WIKI_DOCUMENTS, MOCK_KIN_THREADS } from './data/mockWikiData';
-import { WikiDocument, WikiSentence, WikiBlock, KinThread, KinAnswer } from './types/wiki';
+import { WikiDocument, WikiSentence, WikiBlock, KinThread } from './types/wiki';
 import { NamuWikiHeader } from './components/NamuWikiHeader';
 import { NamuWikiViewer } from './components/NamuWikiViewer';
 import { NaverKinModal } from './components/NaverKinModal';
+import { loadState, saveMutation } from './api';
 import { QuickHelpGuide } from './components/QuickHelpGuide';
 
 export default function App() {
-  const [documents, setDocuments] = useState<WikiDocument[]>(MOCK_WIKI_DOCUMENTS);
+  const [documents, setDocuments] = useState<WikiDocument[]>([]);
   const [currentDocId, setCurrentDocId] = useState<string>('doc-subsidy-2026');
-  const [threads, setThreads] = useState<Record<string, KinThread>>(MOCK_KIN_THREADS);
+  const [threads, setThreads] = useState<Record<string, KinThread>>({});
 
   // Active sentence & block for Naver Kin modal
   const [activeSentence, setActiveSentence] = useState<WikiSentence | null>(null);
@@ -33,8 +33,6 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setActiveSentence(null);
-        setActiveBlock(null);
         setIsHelpOpen(false);
       }
     };
@@ -44,6 +42,7 @@ export default function App() {
 
   // Handle sentence click
   const handleSentenceClick = (sentence: WikiSentence, block: WikiBlock) => {
+    setSelectedThreadId('');
     setActiveSentence(sentence);
     setActiveBlock(block);
   };
@@ -52,196 +51,38 @@ export default function App() {
   const handleCloseModal = () => {
     setActiveSentence(null);
     setActiveBlock(null);
+    requestAnimationFrame(() => window.document.getElementById(`sentence-${activeSentence?.id}`)?.focus({preventScroll: true}));
   };
 
-  // Add Answer to Thread
-  const handleAddAnswer = (
-    threadId: string, 
-    answerText: string, 
-    evidenceTitle: string, 
-    evidenceLoc: string
-  ) => {
-    const targetThreadKey = Object.keys(threads).find(k => threads[k].id === threadId);
-    if (!targetThreadKey) return;
+  const [loadError, setLoadError] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [selectedThreadId, setSelectedThreadId] = useState('');
+  useEffect(() => {
+    loadState().then(data => {
+      setDocuments(data.documents);
+      setThreads(data.threads);
+      setLoaded(true);
+    }).catch(() => setLoadError('서버에 연결하지 못했습니다. API 서버를 실행한 뒤 새로고침해 주세요.'));
+  }, []);
 
-    const newAnswer: KinAnswer = {
-      id: `ans-${Date.now()}`,
-      author: {
-        name: '선임담당자_이책임',
-        role: '실무 선배',
-        level: '달신',
-        badge: '🌙 달신',
-        department: '청년창업지원과',
-        adoptRate: 91.5,
-        avatarColor: 'bg-teal-600'
-      },
-      content: answerText,
-      createdAt: '방금 전',
-      isAdopted: false,
-      isOfficialReviewed: true,
-      reviewNote: evidenceTitle ? `${evidenceTitle} 근거 검토 완료` : undefined,
-      likes: 1,
-      userLiked: true,
-      evidenceLinks: evidenceTitle ? [
-        {
-          title: evidenceTitle,
-          sourceType: '업무매뉴얼',
-          referenceLocation: evidenceLoc || '상세 조항'
-        }
-      ] : [],
-      comments: []
-    };
-
-    setThreads(prev => ({
-      ...prev,
-      [targetThreadKey]: {
-        ...prev[targetThreadKey],
-        answers: [...prev[targetThreadKey].answers, newAnswer]
-      }
-    }));
+  const save = async (payload: Record<string, string>) => {
+    const result = await saveMutation(payload);
+    setThreads(prev => ({...prev, [result.thread.id]: result.thread}));
+    setSelectedThreadId(result.thread.id);
   };
-
-  // Create New Thread for a sentence
-  const handleCreateThread = (
-    sentenceId: string, 
-    quote: string, 
-    title: string, 
-    content: string
-  ) => {
-    const newThreadId = `thread-${Date.now()}`;
-    const newThread: KinThread = {
-      id: newThreadId,
-      documentId: currentDoc.id,
-      blockId: activeBlock?.id || 'block-01',
-      sentenceId,
-      sentenceQuote: quote,
-      title,
-      content,
-      author: {
-        name: '신임이선임_2026',
-        role: '신임 인수자',
-        level: '초보',
-        badge: '새싹',
-        department: '청년창업지원과',
-        avatarColor: 'bg-emerald-500'
-      },
-      createdAt: '방금 전',
-      views: 1,
-      empathyCount: 1,
-      userEmpathized: true,
-      status: 'WAITING',
-      tags: ['업무인수인계', '실무질문', '후임자QnA'],
-      answers: []
-    };
-
-    // Update threads record
-    setThreads(prev => ({
-      ...prev,
-      [sentenceId]: newThread
-    }));
-
-    // Update document sentence metadata (mark hasQuestions: true)
-    setDocuments(prevDocs => 
-      prevDocs.map(doc => {
-        if (doc.id !== currentDoc.id) return doc;
-        return {
-          ...doc,
-          blocks: doc.blocks.map(b => ({
-            ...b,
-            sentences: b.sentences.map(s => {
-              if (s.id === sentenceId) {
-                return {
-                  ...s,
-                  hasQuestions: true,
-                  questionCount: (s.questionCount || 0) + 1
-                };
-              }
-              return s;
-            })
-          }))
-        };
-      })
-    );
+  const handleAddAnswer = async (threadId: string, content: string, evidenceTitle: string, evidenceLoc: string) => {
+    await save({action: 'answer', threadId, content, evidenceTitle, evidenceLoc});
   };
-
-  // Toggle Empathy (나도 궁금해요)
-  const handleToggleEmpathy = (threadId: string) => {
-    const targetKey = Object.keys(threads).find(k => threads[k].id === threadId);
-    if (!targetKey) return;
-
-    setThreads(prev => {
-      const thread = prev[targetKey];
-      const isEmpathized = !!thread.userEmpathized;
-      return {
-        ...prev,
-        [targetKey]: {
-          ...thread,
-          userEmpathized: !isEmpathized,
-          empathyCount: isEmpathized ? Math.max(0, thread.empathyCount - 1) : thread.empathyCount + 1
-        }
-      };
-    });
+  const handleCreateThread = async (sentenceId: string, quote: string, title: string, content: string) => {
+    if (!activeBlock) throw new Error('질문 대상 문단을 선택해 주세요.');
+    await save({action: 'question', documentId: currentDoc.id, blockId: activeBlock.id, sentenceId, quote, title, content});
   };
-
-  // Toggle Answer Like
-  const handleToggleAnswerLike = (threadId: string, answerId: string) => {
-    const targetKey = Object.keys(threads).find(k => threads[k].id === threadId);
-    if (!targetKey) return;
-
-    setThreads(prev => {
-      const thread = prev[targetKey];
-      const updatedAnswers = thread.answers.map(ans => {
-        if (ans.id !== answerId) return ans;
-        const liked = !!ans.userLiked;
-        return {
-          ...ans,
-          userLiked: !liked,
-          likes: liked ? Math.max(0, ans.likes - 1) : ans.likes + 1
-        };
-      });
-
-      return {
-        ...prev,
-        [targetKey]: {
-          ...thread,
-          answers: updatedAnswers
-        }
-      };
-    });
+  const handleAddComment = async (threadId: string, answerId: string, content: string) => {
+    await save({action: 'comment', threadId, answerId, content});
   };
-
-  // Add Comment to an Answer
-  const handleAddComment = (threadId: string, answerId: string, commentText: string) => {
-    const targetKey = Object.keys(threads).find(k => threads[k].id === threadId);
-    if (!targetKey) return;
-
-    setThreads(prev => {
-      const thread = prev[targetKey];
-      const updatedAnswers = thread.answers.map(ans => {
-        if (ans.id !== answerId) return ans;
-        return {
-          ...ans,
-          comments: [
-            ...ans.comments,
-            {
-              id: `c-${Date.now()}`,
-              author: '신임이선임_2026',
-              content: commentText,
-              createdAt: '방금 전'
-            }
-          ]
-        };
-      });
-
-      return {
-        ...prev,
-        [targetKey]: {
-          ...thread,
-          answers: updatedAnswers
-        }
-      };
-    });
-  };
+  // Popularity reactions are outside the first vertical slice.
+  const handleToggleEmpathy = () => {};
+  const handleToggleAnswerLike = () => {};
 
   // Quick question trigger from header or infobox
   const handleOpenQuickQuestion = () => {
@@ -276,7 +117,13 @@ export default function App() {
   };
 
   // Active thread for current active sentence
-  const currentThread = activeSentence ? threads[activeSentence.id] : undefined;
+  const sentenceThreads = activeSentence ? Object.values(threads).filter(t => t.documentId === currentDoc.id && t.blockId === activeBlock?.id && t.sentenceId === activeSentence.id) : [];
+  const currentThread = sentenceThreads.find(t => t.id === selectedThreadId) || sentenceThreads[0];
+  const displayDoc = currentDoc && {...currentDoc, blocks: currentDoc.blocks.map(b => ({...b, sentences: b.sentences.map(s => {
+    const count = Object.values(threads).filter(t => t.documentId === currentDoc.id && t.blockId === b.id && t.sentenceId === s.id).length;
+    return {...s, hasQuestions: count > 0, questionCount: count};
+  })}))};
+  if (!loaded) return <main className="p-8" role="status">{loadError || '서버에서 업무문서를 불러오고 있습니다…'}</main>;
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col font-sans text-slate-800">
@@ -285,7 +132,7 @@ export default function App() {
       <NamuWikiHeader
         document={currentDoc}
         documents={documents}
-        onSelectDocument={(docId) => setCurrentDocId(docId)}
+        onSelectDocument={(docId) => {setCurrentDocId(docId); handleCloseModal();}}
         onOpenQuickQuestion={handleOpenQuickQuestion}
         onSearchSelect={handleSearchSelect}
         fontSize={fontSize}
@@ -296,7 +143,7 @@ export default function App() {
       {/* 2. Main Wiki Body Viewer */}
       <main className="flex-1 max-w-7xl w-full mx-auto pb-16">
         <NamuWikiViewer
-          document={currentDoc}
+          document={displayDoc}
           onSentenceClick={handleSentenceClick}
           onOpenQuickQuestion={handleOpenQuickQuestion}
           fontSize={fontSize}
@@ -306,6 +153,10 @@ export default function App() {
       {/* 3. Naver JiSik-iN Modal (Sentence Click) */}
       {activeSentence && activeBlock && (
         <NaverKinModal
+          key={`${currentDoc.id}:${activeSentence.id}`}
+          draftKey={`${currentDoc.id}:${activeBlock.id}:${activeSentence.id}`}
+          threads={sentenceThreads}
+          onSelectThread={setSelectedThreadId}
           sentence={activeSentence}
           block={activeBlock}
           thread={currentThread}
@@ -347,3 +198,4 @@ export default function App() {
     </div>
   );
 }
+

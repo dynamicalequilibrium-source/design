@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { WikiDocument, WikiSentence, WikiBlock } from '../types/wiki';
 import { NamuWikiInfoBox } from './NamuWikiInfoBox';
 import { 
@@ -32,7 +32,8 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
 }) => {
   const [isTocOpen, setIsTocOpen] = useState(true);
   const [activeFootnote, setActiveFootnote] = useState<number | null>(null);
-  const isDraggingRef = useRef(false);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {if (clickTimer.current) clearTimeout(clickTimer.current);}, [document.id]);
 
   // Scroll to section handler
   const handleScrollToSection = (blockId: string) => {
@@ -44,12 +45,13 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
 
   // Safe sentence click handler that ignores text dragging/selection
   const handleSentenceClickSafe = (e: React.MouseEvent, sentence: WikiSentence, block: WikiBlock) => {
-    const selection = window.getSelection();
-    if (selection && selection.toString().length > 0) {
-      // User is copying text, don't open modal
-      return;
-    }
-    onSentenceClick(sentence, block);
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    if (e.detail > 1 || (e.target as HTMLElement).closest('a, button, sup')) return;
+    if (window.getSelection()?.toString()) return;
+    // Let a second click or text selection finish before opening questions.
+    clickTimer.current = setTimeout(() => {
+      if (!window.getSelection()?.toString()) onSentenceClick(sentence, block);
+    }, 300);
   };
 
   return (
@@ -63,7 +65,7 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
           <div>
             <div className="text-xs text-emerald-700 font-semibold mb-1 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#00a495]" />
-              공식 행정 인수인계 위키 지침서
+              가상 업무 인수인계 · 샘플 문서
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
               {document.title}
@@ -284,6 +286,8 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
                       return (
                         <span
                           key={sentence.id}
+                          id={`sentence-${sentence.id}`}
+                          tabIndex={-1}
                           onClick={(e) => handleSentenceClickSafe(e, sentence, block)}
                           className={`inline transition-colors relative group py-0.5 px-0.5 rounded cursor-pointer ${
                             hasQ
@@ -333,7 +337,7 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
                   {/* Paragraph-level question trigger on the right */}
                   <div className="pt-1 flex items-center justify-end gap-2 text-[11px]">
                     <button
-                      onClick={() => onSentenceClick(block.sentences[0], block)}
+                      onClick={() => block.sentences[0] && onSentenceClick(block.sentences[0], block)}
                       className="text-slate-400 hover:text-[#00a495] transition flex items-center gap-1 cursor-pointer"
                     >
                       <MessageCircleQuestion className="w-3 h-3" />
@@ -369,3 +373,4 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
     </article>
   );
 };
+
