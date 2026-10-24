@@ -36,6 +36,7 @@ interface NaverKinModalProps {
   onSelectThread: (id: string) => void;
   onClose: () => void;
   onAddAnswer: (threadId: string, answerText: string, evidenceTitle: string, evidenceLoc: string) => Promise<void>;
+  onGenerateDraft: (thread: KinThread) => Promise<string>;
   onCreateThread: (sentenceId: string, quote: string, title: string, content: string) => Promise<void>;
   onToggleEmpathy: (threadId: string) => void;
   onToggleAnswerLike: (threadId: string, answerId: string) => void;
@@ -51,6 +52,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
   draftKey,
   onClose,
   onAddAnswer,
+  onGenerateDraft,
   onCreateThread,
   onToggleEmpathy,
   onToggleAnswerLike,
@@ -97,6 +99,7 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
   const [evidenceTitle, setEvidenceTitle] = useDraft('evidenceTitle', '');
   const [evidenceLoc, setEvidenceLoc] = useDraft('evidenceLoc', '');
   const [isAnswerSubmitting, setIsAnswerSubmitting] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   // New Question state
   const [newTitle, setNewTitle] = useDraft('title', '');
@@ -124,6 +127,20 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
       setOpenComments(prev => ({...prev, [answerId]: true}));
     } catch (e) {setError(e instanceof Error ? e.message : '저장하지 못했습니다. 입력 내용은 유지됩니다.');}
     finally {setIsAnswerSubmitting(false);}
+  };
+  const handleGenerateAi = async () => {
+    if (!thread || isGeneratingAi || isAnswerSubmitting) return;
+    if (answerContent.trim() && !window.confirm('현재 작성 중인 답변 초안을 AI 답변으로 바꾸시겠습니까?')) return;
+    setIsGeneratingAi(true);
+    setError('');
+    try {
+      const draft = await onGenerateDraft(thread);
+      setAnswerContent(draft);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'AI 초안 생성에 실패했습니다.');
+    } finally {
+      setIsGeneratingAi(false);
+    }
   };
   const handleSubmitAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -568,6 +585,15 @@ export const NaverKinModal: React.FC<NaverKinModalProps> = ({
                   placeholder="후임자가 바로 업무에 적용할 수 있는 구체적인 팁, 주의사항, 시스템 조작 경로 등을 상세히 남겨주세요."
                   className="w-full border border-slate-200 rounded-lg p-3 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
                 />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <button type="button" onClick={handleGenerateAi}
+                  disabled={isGeneratingAi || isAnswerSubmitting}
+                  className="self-start rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50">
+                  {isGeneratingAi ? 'Gemma AI 초안 생성 중...' : 'Gemma AI 답변 초안 생성'}
+                </button>
+                <p className="text-[11px] text-slate-500">개인 PC의 LM Studio를 사용합니다. AI 초안은 공식 답변이 아니므로 근거를 확인하고 수정한 뒤 등록하세요.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
