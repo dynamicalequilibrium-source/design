@@ -9,6 +9,8 @@ import { NamuWikiHeader } from './components/NamuWikiHeader';
 import { NamuWikiViewer } from './components/NamuWikiViewer';
 import { NaverKinModal } from './components/NaverKinModal';
 import { loadState, saveMutation } from './api';
+import { isBrowserDemo } from './browserDemo';
+import { generateAiDraft } from './ai';
 import { QuickHelpGuide } from './components/QuickHelpGuide';
 
 export default function App() {
@@ -127,6 +129,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col font-sans text-slate-800">
+      {isBrowserDemo && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2 text-xs text-center">
+          개인 시연 모드: 질문·답변은 이 브라우저에만 저장됩니다. 다른 사용자와 공유되지 않으며, 실제 내부자료를 입력하지 마세요.
+        </div>
+      )}
       
       {/* 1. NamuWiki Header with Search & Tooling */}
       <NamuWikiHeader
@@ -162,6 +169,7 @@ export default function App() {
           thread={currentThread}
           onClose={handleCloseModal}
           onAddAnswer={handleAddAnswer}
+          onGenerateDraft={generateAiDraft}
           onCreateThread={handleCreateThread}
           onToggleEmpathy={handleToggleEmpathy}
           onToggleAnswerLike={handleToggleAnswerLike}
