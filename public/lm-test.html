@@ -1,0 +1,59 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>LM Studio 연결 테스트</title>
+</head>
+<body style="font-family:sans-serif;max-width:700px;margin:40px auto;padding:16px">
+  <h2>Gemma 로컬 AI 테스트</h2>
+  <p>LM Studio 서버가 켜진 PC에서 사용하세요.</p>
+
+  <textarea id="question" rows="4"
+    style="width:100%">안녕하세요. 자기소개를 해주세요.</textarea>
+  <p>
+    <button id="ask">AI에게 질문하기</button>
+  </p>
+  <pre id="answer"
+    style="white-space:pre-wrap"></pre>
+
+  <script>
+    document.getElementById("ask").onclick = async () => {
+      const output = document.getElementById("answer");
+      output.textContent = "AI 답변 생성 중...";
+
+      try {
+        const res = await fetch(
+          "http://127.0.0.1:12345/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              model: "google/gemma-4-e4b",
+              messages: [{
+                role: "user",
+                content: document.getElementById("question").value
+              }],
+              max_tokens: 300,
+              stream: false
+            })
+          }
+        );
+
+        if (!res.ok) throw new Error("HTTP " + res.status);
+
+        const data = await res.json();
+        output.textContent =
+          data.choices?.[0]?.message?.content
+          || "답변이 비어 있습니다.";
+      } catch (err) {
+        output.textContent =
+          "연결 실패: " + err.message +
+          "\nLM Studio 서버, CORS, 브라우저 권한을 확인하세요.";
+      }
+    };
+  </script>
+</body>
+</html>
