@@ -141,6 +141,8 @@ export interface ChecklistCategory {
 }
 
 export interface WikiDocument {
+  status?: "draft" | "review" | "published";
+  revision?: number;
   id: string;
   title: string;
   categories: string[];

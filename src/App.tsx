@@ -9,9 +9,11 @@ import { NamuWikiHeader } from './components/NamuWikiHeader';
 import { NamuWikiViewer } from './components/NamuWikiViewer';
 import { NaverKinModal } from './components/NaverKinModal';
 import { loadState, saveMutation } from './api';
+import {DocumentWorkspace} from './components/DocumentWorkspace';
 import { QuickHelpGuide } from './components/QuickHelpGuide';
 
 export default function App() {
+  const [editorSignal, setEditorSignal] = useState(0);
   const [documents, setDocuments] = useState<WikiDocument[]>([]);
   const [currentDocId, setCurrentDocId] = useState<string>('doc-subsidy-2026');
   const [threads, setThreads] = useState<Record<string, KinThread>>({});
@@ -87,7 +89,8 @@ export default function App() {
   // Quick question trigger from header or infobox
   const handleOpenQuickQuestion = () => {
     // Pick the most critical highlight sentence
-    const targetBlock = currentDoc.blocks.find(b => b.sentences.some(s => s.id === 's-3-2')) || currentDoc.blocks[0];
+    const targetBlock = currentDoc.blocks.find(b => b.sentences.some(s => s.id === 's-3-2')) || currentDoc.blocks.find(b => b.sentences.length > 0);
+    if (!targetBlock) return;
     const targetSentence = targetBlock.sentences.find(s => s.id === 's-3-2') || targetBlock.sentences[0];
     setActiveSentence(targetSentence);
     setActiveBlock(targetBlock);
@@ -117,10 +120,10 @@ export default function App() {
   };
 
   // Active thread for current active sentence
-  const sentenceThreads = activeSentence ? Object.values(threads).filter(t => t.documentId === currentDoc.id && t.blockId === activeBlock?.id && t.sentenceId === activeSentence.id) : [];
+  const sentenceThreads = activeSentence ? Object.values(threads).filter(t => t.documentId === currentDoc.id && t.blockId === activeBlock?.id && t.sentenceId === activeSentence.id && t.sentenceQuote === activeSentence.text) : [];
   const currentThread = sentenceThreads.find(t => t.id === selectedThreadId) || sentenceThreads[0];
   const displayDoc = currentDoc && {...currentDoc, blocks: currentDoc.blocks.map(b => ({...b, sentences: b.sentences.map(s => {
-    const count = Object.values(threads).filter(t => t.documentId === currentDoc.id && t.blockId === b.id && t.sentenceId === s.id).length;
+    const count = Object.values(threads).filter(t => t.documentId === currentDoc.id && t.blockId === b.id && t.sentenceId === s.id && t.sentenceQuote === s.text).length;
     return {...s, hasQuestions: count > 0, questionCount: count};
   })}))};
   if (!loaded) return <main className="p-8" role="status">{loadError || '서버에서 업무문서를 불러오고 있습니다…'}</main>;
@@ -140,9 +143,14 @@ export default function App() {
         onToggleHelp={() => setIsHelpOpen(true)}
       />
 
+      <DocumentWorkspace document={currentDoc} editorSignal={editorSignal} onSaved={doc => {
+        setDocuments(prev => prev.some(d => d.id === doc.id) ? prev.map(d => d.id === doc.id ? doc : d) : [...prev, doc]);
+        setCurrentDocId(doc.id); handleCloseModal();
+      }}/>
       {/* 2. Main Wiki Body Viewer */}
       <main className="flex-1 max-w-7xl w-full mx-auto pb-16">
         <NamuWikiViewer
+          onEdit={() => setEditorSignal(n => n + 1)}
           document={displayDoc}
           onSentenceClick={handleSentenceClick}
           onOpenQuickQuestion={handleOpenQuickQuestion}
@@ -182,7 +190,7 @@ export default function App() {
               업무 바통 (Baton Wiki) · 바통위키 인수인계 & 바통 Q&A 지식 시스템
             </div>
             <p className="text-[11px] text-slate-400">
-              본 시스템의 모든 콘텐츠는 가상 시뮬레이션 데이터이며, 행정안전부 및 기획재정부 국고보조금 지침을 참조하여 제작되었습니다.
+              샘플 문서와 직접 작성한 문서를 함께 관리합니다. AI 초안은 원문 대조와 담당자 검토 후 사용하세요.
             </p>
           </div>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
