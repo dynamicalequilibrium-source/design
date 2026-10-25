@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import type {WikiDocument} from '../types/wiki';
 import {documentRequest} from '../api';
+import {generateLocally, loadLocalModels, LOCAL_AI_URL} from '../localAI';
 
 type Section = {id?: string; title: string; text: string};
 type Draft = {title: string; summary: string; sections: Section[]; expectedRevision: number};
@@ -14,6 +15,9 @@ export function DocumentWorkspace({document: doc, onSaved, editorSignal}: {docum
   const [mode, setMode] = useState<'new' | 'edit' | 'history' | null>(null);
   const [draft, setDraft] = useState<Draft>(blank);
   const [source, setSource] = useState('');
+  const [localModels, setLocalModels] = useState<string[]>([]);
+  const [localModel, setLocalModel] = useState('');
+  const [useLocal, setUseLocal] = useState(false);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -116,6 +120,14 @@ export function DocumentWorkspace({document: doc, onSaved, editorSignal}: {docum
             <label className="block font-medium text-sm">문서 제목<input className={field} value={draft.title} maxLength={300} onChange={e => setDraft(d => ({...d, title: e.target.value}))}/></label>
             <details open={mode === 'new'} className="bg-emerald-50 p-3 rounded-lg">
               <summary className="cursor-pointer font-medium text-sm">파일 가져오기 · AI 초안 생성</summary>
+              <div className="border border-emerald-200 rounded-lg p-3 mt-3 space-y-2">
+                <p className="text-sm font-medium">내 PC의 로컬 AI</p>
+                <p className="text-xs text-slate-600 break-all">{LOCAL_AI_URL} · 현재 브라우저와 같은 PC에서 실행 중인 모델에 연결합니다.</p>
+                <button className={button} onClick={() => run(async () => {const models = await loadLocalModels(); setLocalModels(models); setLocalModel(previous => models.includes(previous) ? previous : models[0]); setUseLocal(true); setNotice('로컬 모델 목록을 확인했습니다. 모델을 선택하고 AI 초안 생성을 눌러 주세요.');})}>로컬 AI 연결</button>
+                {localModels.length > 0 && <label className="block text-sm">로컬 AI 모델<select className={field} value={localModel} onChange={e => setLocalModel(e.target.value)}>{localModels.map(model => <option key={model} value={model}>{model}</option>)}</select></label>}
+                {localModels.length > 0 && <label className="flex gap-2 items-center text-sm"><input type="checkbox" checked={useLocal} onChange={e => setUseLocal(e.target.checked)}/>선택한 로컬 모델로 초안 생성</label>}
+                <p className="text-xs text-slate-600">LM Studio에서 CORS를 허용해 주세요. 원문이 선택한 모델로 전송되며, 연결 실패 시 입력은 유지됩니다.</p>
+              </div>
               <label className="block text-sm mt-3">원문 파일 (TXT, MD, PDF, DOCX · 5MB 이하)<input className={field} type="file" accept=".txt,.md,.pdf,.docx" onChange={e => {
                 const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
                 if (file.size > 5 * 1024 * 1024) {setError('파일은 5MB 이하만 지원합니다.'); return;}
@@ -124,7 +136,7 @@ export function DocumentWorkspace({document: doc, onSaved, editorSignal}: {docum
               <label className="block text-sm mt-3">참고 원문<textarea className={field} rows={6} value={source} maxLength={60000} onChange={e => setSource(e.target.value)}/></label>
               <div className="flex gap-2 flex-wrap mt-2">
                 <button className={button} disabled={!source.trim()} onClick={() => {setDraft(d => ({...d, sections: [...d.sections.filter(s => s.text.trim()), {title: '가져온 원문', text: source}]})); setNotice('원문을 본문 끝에 추가했습니다.');}}>원문을 본문에 추가</button>
-                <button className={button + ' bg-emerald-100'} disabled={!draft.title.trim() || source.trim().length < 20} onClick={() => run(async () => {const result = await documentRequest<{draft: Draft; notice: string}>('/generate', 'POST', {title: draft.title, source}); setDraft(d => ({...d, summary: result.draft.summary, sections: [...d.sections.filter(s => s.text.trim()), ...result.draft.sections]})); setNotice(result.notice + ' 기존 본문 뒤에 추가했습니다.');})}>AI 초안 생성</button>
+                <button className={button + ' bg-emerald-100'} disabled={!draft.title.trim() || source.trim().length < 20} onClick={() => run(async () => {const result = useLocal ? await generateLocally<{draft: Draft; notice: string}>(draft.title, source, localModel) : await documentRequest<{draft: Draft; notice: string}>('/generate', 'POST', {title: draft.title, source}); setDraft(d => ({...d, summary: result.draft.summary, sections: [...d.sections.filter(s => s.text.trim()), ...result.draft.sections]})); setNotice(result.notice + ' 기존 본문 뒤에 추가했습니다.');})}>AI 초안 생성</button>
               </div>
             </details>
             <label className="block text-sm font-medium">요약<textarea className={field} rows={2} value={draft.summary} maxLength={3000} onChange={e => setDraft(d => ({...d, summary: e.target.value}))}/></label>

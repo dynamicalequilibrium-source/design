@@ -125,3 +125,16 @@ class DocumentTests(unittest.IsolatedAsyncioTestCase):
                 result = await self.client.post('/api/documents/generate', json=body, headers=self.headers)
                 self.assertEqual(result.status_code, expected, result.text)
         self.assertEqual(len((await self.client.get('/api/state')).json()['documents']), 2)
+
+    async def test_browser_generation_prompt_and_response_validation(self):
+        prompt = await self.client.get('/api/documents/generation-prompt')
+        self.assertEqual(prompt.status_code, 200)
+        self.assertIn('확인 필요', prompt.json()['systemPrompt'])
+        body = {'title': '로컬 AI 초안', 'content': '```json\n' + json.dumps({'summary': '요약', 'sections': [{'title': '업무', 'text': '보고서를 전달한다.'}]}) + '\n```', 'finishReason': 'stop'}
+        result = await self.client.post('/api/documents/validate-generation', headers=self.headers, json=body)
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual(result.json()['draft']['title'], body['title'])
+        self.assertEqual((await self.client.post('/api/documents/validate-generation', headers=self.headers, json={**body, 'finishReason': 'length'})).status_code, 422)
+        self.assertEqual((await self.client.post('/api/documents/validate-generation', headers=self.headers, json={**body, 'content': 'invalid'})).status_code, 422)
+        self.assertEqual((await self.client.post('/api/documents/validate-generation', json=body)).status_code, 403)
+        self.assertEqual(len((await self.client.get('/api/state')).json()['documents']), 2)
