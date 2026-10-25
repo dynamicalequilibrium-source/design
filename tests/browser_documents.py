@@ -1,0 +1,70 @@
+"""Run against a disposable API database and local Vite (:3000)."""
+from playwright.sync_api import sync_playwright, expect
+from uuid import uuid4
+import os
+import re
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(executable_path=os.getenv('BATON_CHROMIUM', '/usr/bin/chromium'), headless=True, args=['--no-sandbox'])
+    page = browser.new_page(viewport={'width': 1440, 'height': 1000})
+    failures = []
+    page.on('pageerror', lambda error: failures.append(str(error)))
+    page.goto('http://127.0.0.1:3000')
+    page.get_by_role('button', name='새 인수인계서', exact=True).click()
+    dialog = page.get_by_role('dialog')
+    title = '신규 인수인계 ' + uuid4().hex[:6]
+    page.get_by_label('문서 제목', exact=True).fill(title)
+    page.get_by_label('원문 파일', exact=False).set_input_files({'name': '업무.txt', 'mimeType': 'text/plain', 'buffer': '매월 5일 업무 보고서를 제출합니다. 담당자에게 미결 업무를 전달합니다.'.encode()})
+    expect(page.get_by_role('textbox', name='참고 원문', exact=True)).to_have_value(re.compile('매월 5일'))
+    page.get_by_role('button', name='AI 초안 생성', exact=True).click()
+    expect(page.get_by_role('alert')).to_contain_text('AI 연결이 설정되지 않았습니다')
+    expect(page.get_by_role('textbox', name='참고 원문', exact=True)).to_have_value(re.compile('매월 5일'))
+    page.route('**/api/documents/generate', lambda route: route.fulfill(json={'draft': {'summary': 'AI 요약', 'sections': [{'title': '월별 보고', 'text': '매월 5일 보고합니다.'}]}, 'notice': 'AI 초안입니다.'}))
+    page.get_by_role('button', name='AI 초안 생성', exact=True).click()
+    expect(page.get_by_role('textbox', name='요약', exact=True)).to_have_value('AI 요약')
+    page.unroute('**/api/documents/generate')
+    page.get_by_role('button', name='원문을 본문에 추가', exact=True).click()
+    page.reload()
+    page.get_by_role('button', name='새 인수인계서', exact=True).click()
+    expect(page.get_by_label('문서 제목', exact=True)).to_have_value(title)
+    expect(page.get_by_role('textbox', name='문단 1 본문', exact=True)).to_have_value(re.compile('매월 5일'))
+    page.route('**/api/documents', lambda route: route.abort())
+    page.get_by_role('button', name='초안 저장', exact=True).click()
+    expect(page.get_by_role('alert')).to_be_visible()
+    expect(page.get_by_label('문서 제목', exact=True)).to_have_value(title)
+    page.unroute('**/api/documents')
+    page.get_by_role('button', name='초안 저장', exact=True).click()
+    expect(dialog).to_have_count(0)
+    expect(page.get_by_role('heading', name=title, exact=True)).to_be_visible()
+    page.reload()
+    # The header defaults to the first document; choose the saved one using the API-backed selector.
+    page.get_by_role('button', name='인수인계서 선택', exact=False).click()
+    page.get_by_role('button', name=title, exact=False).click()
+    expect(page.get_by_role('heading', name=title, exact=True)).to_be_visible()
+    page.get_by_role('button', name='문서 편집', exact=True).click()
+    page.get_by_role('textbox', name='문단 1 본문', exact=True).fill('매월 7일 업무 보고서를 제출합니다.')
+    page.get_by_role('button', name='초안 저장', exact=True).click()
+    page.get_by_role('button', name='검토 요청', exact=True).click()
+    expect(page.get_by_role('button', name='문서 편집', exact=True)).to_be_disabled()
+    page.get_by_label('검토 의견', exact=True).fill('일정 확인 필요')
+    page.get_by_role('button', name='수정 요청', exact=True).click()
+    expect(page.get_by_role('button', name='문서 편집', exact=True)).to_be_enabled()
+    page.get_by_role('button', name='검토 요청', exact=True).click()
+    page.get_by_label('검토 의견', exact=True).fill('원문 대조 완료')
+    page.get_by_role('button', name='검토 완료 및 게시', exact=True).click()
+    expect(page.get_by_label('문서 관리')).to_contain_text('게시됨')
+    with page.expect_download() as downloaded:
+        page.get_by_role('link', name='Markdown 다운로드', exact=True).click()
+    assert downloaded.value.suggested_filename.endswith('.md')
+    page.get_by_role('button', name='버전 기록', exact=True).click()
+    page.get_by_role('button', name='버전 1 보기', exact=True).click()
+    expect(dialog).to_contain_text('매월 5일')
+    page.get_by_role('button', name='닫기', exact=True).click()
+    page.set_viewport_size({'width': 390, 'height': 844})
+    page.get_by_role('button', name='문서 편집', exact=True).click()
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'horizontal overflow'
+    page.keyboard.press('Escape')
+    expect(dialog).to_have_count(0)
+    assert not failures, failures
+    browser.close()
+    print('PASS: file import, AI unavailable, draft recovery, failed save recovery, persistence, edit, return, publish, export, history, mobile, no runtime errors')

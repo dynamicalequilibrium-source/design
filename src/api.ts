@@ -23,3 +23,16 @@ export async function saveMutation(payload: Record<string, string>): Promise<{th
   pending.delete(body);
   return response.json();
 }
+
+export async function documentRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+  const form = body instanceof FormData;
+  const response = await fetch('/api/documents' + path, {
+    method, headers: {'X-CSRF-Token': csrfToken, ...(form ? {} : {'Content-Type': 'application/json'})},
+    ...(body === undefined ? {} : {body: form ? body : JSON.stringify(body)})
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(typeof data.detail === 'string' ? data.detail : '요청을 처리하지 못했습니다. 입력 내용을 확인해 주세요.');
+  }
+  return response.json();
+}

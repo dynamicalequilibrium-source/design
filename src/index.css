@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+@media print {
+  header, footer, .document-tools, button, [role="dialog"] { display: none !important; }
+  article { box-shadow: none !important; max-width: none !important; }
+  body, main { background: white !important; }
+}

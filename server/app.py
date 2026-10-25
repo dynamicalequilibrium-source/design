@@ -26,6 +26,7 @@ def database():
           CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, data TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, document_id TEXT NOT NULL REFERENCES documents(id), data TEXT NOT NULL);
           CREATE INDEX IF NOT EXISTS threads_document ON threads(document_id);
+          CREATE TABLE IF NOT EXISTS revisions (document_id TEXT NOT NULL, revision INTEGER NOT NULL, data TEXT NOT NULL, note TEXT NOT NULL, PRIMARY KEY(document_id, revision));
           CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, csrf TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS requests (key TEXT PRIMARY KEY, session_id TEXT NOT NULL, body TEXT NOT NULL, result TEXT NOT NULL);
         ''')
@@ -141,3 +142,8 @@ async def mutate(body: Mutation, request: Request):
         result = {'thread': thread}
         db.execute('INSERT INTO requests VALUES (?,?,?,?)', (key, who['id'], payload, json.dumps(result, ensure_ascii=False)))
         return result
+
+
+# Document authoring is a separate API from sentence Q&A.
+from server.documents import install_document_routes
+install_document_routes(app, database, session)

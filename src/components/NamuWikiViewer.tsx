@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { WikiDocument, WikiSentence, WikiBlock } from '../types/wiki';
 import { NamuWikiInfoBox } from './NamuWikiInfoBox';
-import { 
-  List, 
-  ChevronDown, 
-  ChevronUp, 
-  MessageSquare, 
-  AlertCircle, 
-  CheckCircle, 
-  Info, 
+import {
+  List,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  AlertCircle,
+  CheckCircle,
+  Info,
   HelpCircle,
   ExternalLink,
   MessageCircleQuestion,
@@ -22,13 +22,15 @@ interface NamuWikiViewerProps {
   onSentenceClick: (sentence: WikiSentence, block: WikiBlock) => void;
   onOpenQuickQuestion: () => void;
   fontSize: number;
+  onEdit: () => void;
 }
 
 export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
   document,
   onSentenceClick,
   onOpenQuickQuestion,
-  fontSize
+  fontSize,
+  onEdit
 }) => {
   const [isTocOpen, setIsTocOpen] = useState(true);
   const [activeFootnote, setActiveFootnote] = useState<number | null>(null);
@@ -55,7 +57,7 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
   };
 
   return (
-    <article 
+    <article
       className="max-w-7xl mx-auto px-4 sm:px-6 py-6 bg-white min-h-screen shadow-xs text-slate-800"
       style={{ fontSize: `${fontSize}px` }}
     >
@@ -65,7 +67,7 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
           <div>
             <div className="text-xs text-emerald-700 font-semibold mb-1 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#00a495]" />
-              가상 업무 인수인계 · 샘플 문서
+              {document.status ? '업무 인수인계 · 작성 문서' : '가상 업무 인수인계 · 샘플 문서'}
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
               {document.title}
@@ -74,30 +76,14 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
 
           {/* NamuWiki Action Buttons */}
           <div className="flex items-center gap-1.5 self-start md:self-auto text-xs shrink-0 flex-wrap">
-            <button 
-              onClick={() => alert('바통위키 역링크: 본 문서를 참조하고 있는 타 업무 지침서(기획재정팀 결산서, 예산편성안 등 4건)가 있습니다.')}
-              className="px-2.5 py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer flex items-center gap-1"
-            >
-              <Link2 className="w-3.5 h-3.5 text-slate-500" /> 역링크
-            </button>
-            <button 
-              onClick={() => alert('인수인계 토론: 현재 3건의 실무 지침 개정 건의가 토론 중에 있습니다.')}
-              className="px-2.5 py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer flex items-center gap-1"
-            >
-              <MessageSquare className="w-3.5 h-3.5 text-slate-500" /> 토론 (3)
-            </button>
-            <button 
-              onClick={() => alert('편집 모드: 인수인계서 수정 권한은 전임자(김책임) 및 신임자(이선임)에게만 부여되어 있습니다.')}
+            <button
+              onClick={onEdit}
+              disabled={document.status === 'review'}
               className="px-2.5 py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer"
             >
               편집
             </button>
-            <button 
-              onClick={() => alert('문서 역사: v4.2(현재) - 2026.10.18 바통 Q&A 답변 2건 본문 반영 승인 완료')}
-              className="px-2.5 py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer"
-            >
-              역사
-            </button>
+
           </div>
         </div>
 
@@ -106,9 +92,9 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
           <Info className="w-4 h-4 text-[#00a495] shrink-0 mt-0.5" />
           <div className="text-slate-700 leading-relaxed">
             <span className="font-bold text-emerald-800">[안내] </span>
-            본 문서는 <strong className="text-slate-900">2026년도 신임 담당자</strong>를 위한 인수인계 지침서입니다. 
-            문서 내 <span className="bg-emerald-100/80 text-emerald-900 font-semibold px-1 rounded border-b border-emerald-400">초록색 하이라이트 문장</span>이나 
-            우측의 <span className="font-bold text-[#008275]">바통 Q&A 배지</span>를 클릭하면, 
+            본문을 읽고 문장별로 질문을 남길 수 있습니다.
+            문서 내 <span className="bg-emerald-100/80 text-emerald-900 font-semibold px-1 rounded border-b border-emerald-400">초록색 하이라이트 문장</span>이나
+            우측의 <span className="font-bold text-[#008275]">바통 Q&A 배지</span>를 클릭하면,
             선배들이 남긴 <span className="font-bold text-[#008275]">바통 Q&A 실무 질의응답 및 근거 행정지침</span>을 열람하실 수 있습니다.
           </div>
         </div>
@@ -116,10 +102,10 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
 
       {/* Main Content Layout with Floating InfoBox on right */}
       <div className="clearfix">
-        
+
         {/* Right InfoBox */}
-        <NamuWikiInfoBox 
-          infoBox={document.infoBox} 
+        <NamuWikiInfoBox
+          infoBox={document.infoBox}
           onOpenQuickQuestion={onOpenQuickQuestion}
         />
 
@@ -167,7 +153,7 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
         <div className="space-y-8">
           {document.blocks.map((block) => (
             <section key={block.id} id={block.id} className="scroll-mt-20">
-              
+
               {/* Section Heading */}
               {block.title && (
                 <div className="border-b border-slate-200 pb-1.5 mb-3.5 flex items-center justify-between">
@@ -218,8 +204,8 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
                           {block.tableData.rows.map((row, rIdx) => (
                             <tr key={rIdx} className={rIdx % 2 === 1 ? 'bg-slate-50/70 hover:bg-emerald-50/40' : 'bg-white hover:bg-emerald-50/40'}>
                               {row.cells.map((cell, cIdx) => (
-                                <td 
-                                  key={cell.id} 
+                                <td
+                                  key={cell.id}
                                   className={`p-2.5 border border-slate-200 leading-relaxed ${
                                     cIdx === 0 ? 'text-center font-bold text-slate-700 bg-slate-50/80 w-14 whitespace-nowrap' : ''
                                   } ${cIdx === 1 ? 'font-semibold text-slate-900 whitespace-nowrap' : ''} ${
@@ -302,7 +288,7 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
 
                           {/* Footnote Tag [1] */}
                           {sentence.footnoteNumber && (
-                            <sup 
+                            <sup
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleScrollToSection('footnotes-section');
@@ -316,7 +302,7 @@ export const NamuWikiViewer: React.FC<NamuWikiViewerProps> = ({
 
                           {/* Q&A Badge Icon if Questions exist */}
                           {hasQ && (
-                            <span 
+                            <span
                               className="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.2 rounded-full bg-[#00a495] hover:bg-[#008275] text-white text-[10px] font-bold shadow-2xs align-middle"
                               title="바통 Q&A 답변 열람"
                             >
